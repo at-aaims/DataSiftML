@@ -40,21 +40,20 @@ def predict_with_dropout(model, x, T=100):
 
 def main(args):
     num_samples = args.num_samples
-    noise_level = 0.1
     xmin, xmax = -10, 10
 
     # Generate x-spacing
-    if args.spacing == 'sine': 
+    if args.spacing == 'sine': # still working on this one
         x = np.linspace(0, 180, num_samples)
         x = np.sin(np.radians(x))
 
-    elif args.spacing == 'gaussian': 
-        x = np.random.normal(loc=0, scale=2, size=num_samples)
+    elif args.spacing == 'gaussian': # cluster near x=0
+        x = np.random.normal(loc=0, scale=1, size=num_samples)
 
     else: # linear
         x = np.linspace(xmin, xmax, num_samples)
 
-    # Generate data from functions
+    # Generate y-data from functions
     if args.function == 'heaviside':
         y = np.heaviside(x, 1) + 1
         
@@ -86,29 +85,26 @@ def main(args):
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
     model = create_model()
-    model.fit(x_train, y_train, epochs=args.epochs, batch_size=args.batch, validation_data=(x_test, y_test))
+    model.fit(x_train, y_train, epochs=args.epochs, batch_size=args.batch, \
+              validation_data=(x_test, y_test))
 
     # Make predictions
     y_predict_train = model.predict(x_train)
     mean_train, var_train = predict_with_dropout(model, x_train)
-    stddev_train = np.sqrt(var_train)
+    mean_train = np.squeeze(mean_train)
+    stddev_train = np.squeeze(np.sqrt(var_train))
     max_stddev_train = np.max(stddev_train)
     print('max_stddev_train:', max_stddev_train)
     stddev_train /= max_stddev_train
+    print(stddev_train)
 
     y_predict_test = model.predict(x_test)
     mean_test, var_test = predict_with_dropout(model, x_test)
-    stddev_test = np.sqrt(var_test)
+    mean_test = np.squeeze(mean_test)
+    stddev_test = np.squeeze(np.sqrt(var_test))
     max_stddev_test = np.mean(stddev_test)
     print('max_stddev_test:', max_stddev_test)
     stddev_test /= max_stddev_test
-
-    mean_train = np.squeeze(mean_train)
-    stddev_train = np.squeeze(stddev_train)
-    mean_test = np.squeeze(mean_test)
-    stddev_test = np.squeeze(stddev_test)
-
-    print(stddev_train)
     print(stddev_test)
 
     if args.plot:
