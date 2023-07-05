@@ -12,16 +12,18 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import MeanSquaredError
 from sklearn.model_selection import train_test_split
 
 
 def create_model():
+    actfn = 'tanh'
     model = Sequential([
-        Dense(32, activation='relu', input_shape=(1,)),
-        Dense(32, activation='relu'),
+        Dense(32, activation=actfn, input_shape=(1,)),
+        Dropout(0.25),
+        Dense(32, activation=actfn),
         Dense(1)
     ])
     
@@ -55,7 +57,7 @@ def main(args):
 
     # Generate y-data from functions
     if args.function == 'heaviside':
-        y = np.heaviside(x, 1) + 1
+        y = np.heaviside(x, 1)
         
     elif args.function == 'periodic_var_freq': # period functions with variable frequency
         y = np.sin(x * x)
@@ -82,7 +84,7 @@ def main(args):
 
     x = x[:, np.newaxis] # Add an extra dimension for the neural network
     y = y[:, np.newaxis] # Add an extra dimension for the neural network
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=args.test_frac, random_state=42)
 
     model = create_model()
     model.fit(x_train, y_train, epochs=args.epochs, batch_size=args.batch, \
@@ -95,7 +97,6 @@ def main(args):
     stddev_train = np.squeeze(np.sqrt(var_train))
     max_stddev_train = np.max(stddev_train)
     print('max_stddev_train:', max_stddev_train)
-    stddev_train /= max_stddev_train
     print(stddev_train)
 
     y_predict_test = model.predict(x_test)
@@ -104,7 +105,6 @@ def main(args):
     stddev_test = np.squeeze(np.sqrt(var_test))
     max_stddev_test = np.mean(stddev_test)
     print('max_stddev_test:', max_stddev_test)
-    stddev_test /= max_stddev_test
     print(stddev_test)
 
     if args.plot:
@@ -116,7 +116,7 @@ def main(args):
         plt.scatter(x_train, model.predict(x_train), color='r', s=1)
         plt.errorbar(x_train, mean_train, yerr=stddev_train, fmt='o', color='r', \
                      ecolor='gray', elinewidth=1, capsize=1, markersize=2)
-        for x in x_train: plt.axvline(x=x, color='r', linestyle=':', alpha=0.1)
+        for x in x_train: plt.axvline(x=x, color='r', alpha=0.05)
 
         plt.subplot(1, 2, 2)
         plt.scatter(x_test, y_test, s=1)
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     parser.add_argument("--noise", type=float, default=0, help="amount of noise to add [0, 1]")
     parser.add_argument("--plot", action='store_true', help="plot results")
     parser.add_argument("--spacing", choices=spacing, help="type of spacing to use")
+    parser.add_argument("--test_frac", type=float, default=0.2, help="fraction of data to test on")
     args = parser.parse_args()
     
     main(args)
-
