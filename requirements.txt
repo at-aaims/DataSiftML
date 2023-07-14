@@ -2,3 +2,4 @@ matplotlib==3.7.1
 numpy==1.23.5
 scikit-learn==1.2.2
 tensorflow==2.11.0
+fluidfoam==0.2.5

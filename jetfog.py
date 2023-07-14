@@ -10,6 +10,7 @@ import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 import tensorflow as tf
+#import tensorflow_probability as tfp
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
@@ -39,6 +40,12 @@ def predict_with_dropout(model, x, T=100):
     mean = Y_T.mean(axis=0)
     variance = Y_T.var(axis=0)
     return mean, variance
+
+#def pearson_correlation(y_true, y_pred):
+    #mean_preds, stddev_preds = mc_dropout_predictions(y_pred)
+    #losses = calculate_loss(y_true, mean_preds)
+    #uncertainties = tf.reduce_mean(stddev_preds, axis=-1)
+    #return tfp.stats.correlation(losses, uncertainties, sample_axis=0, event_axis=None)
 
 def main(args):
     num_samples = args.num_samples
