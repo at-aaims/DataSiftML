@@ -18,7 +18,7 @@
 
 # usage examples
 
-    python jetfog.py -f heaviside -n 100 -e 200 --plot --test_frac 0.01 --spacing gaussian --noise 0.1
+    python jetfog.py -f heaviside -e 200 --plot --test_frac 0.01 --spacing gaussian --noise 0.1
 
-    python maxent.py --path ./data --time 1000 --plot
+    python maxent.py --path ./data --time 1000 -nc 10 -ns 1000 --plot
 
