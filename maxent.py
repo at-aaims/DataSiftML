@@ -5,9 +5,16 @@ import pandas as pd
 
 from fluidfoam import readscalar, readvector, readforce
 from sklearn.cluster import KMeans, Birch
+from sklearn.neighbors import KernelDensity
+
+def calculate_entropy(data):
+    kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(data)
+    log_dens = kde.score_samples(data)
+    entropy = -np.sum(np.exp(log_dens) * log_dens)
+    return entropy
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-n", type=int, default=10, help="number of clusters")
+parser.add_argument("-n", "--n_clusters", type=int, default=10, help="number of clusters")
 parser.add_argument("--path", type=str, default='.', help="path to simulation")
 parser.add_argument("--time", type=str, default='1000', help="time step to analyze")
 parser.add_argument("--plot", action='store_true', default=False, help="show plots")
@@ -19,6 +26,8 @@ p = readscalar(args.path, args.time, 'p.gz')
 x, y, z = readvector(args.path, args.time, 'C.gz')
 Ux, Uy, Uz = readvector(args.path, args.time, 'U.gz')
 forces = readforce(args.path, time_name='0', name='forces')
+
+# Drag force is composed of both a viscous and pressure components
 drag = forces[:, 1] + forces[:, 2]
 
 if args.verbose:
@@ -53,6 +62,9 @@ if args.verbose:
     print(stacked.shape)
 
 df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy'])
+df_sub = df[['p', 'Ux', 'Uy']]
+
+
 
 # Output CSV file named by timestamp, e.g. 1000.csv
 file_name = args.time + '.csv'
@@ -62,14 +74,34 @@ with open(file_name, 'a') as file:
     drag_value = drag[int(args.time)]
     file.write(f"# Drag: {drag_value}\n")
 
-# Create a KMeans instance
-kmeans = KMeans(n_clusters=args.n, random_state=0)
+# K-means clustering
+kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
+kmeans.fit(df_sub)
+df_sub['cluster'] = kmeans.predict(df_sub)
 
-# Fit the model to your data
-kmeans.fit(stacked[:, 2:5])
+# Perform sampling of clusters
+n_samples_per_cluster = 100
+samples = []
+total_points = len(df_sub)
+for cluster in range(args.n_clusters):
+    cluster_points = df_sub[df_sub['cluster'] == cluster]
+    # Proportional sampling according to cluster size
+    n_samples = int(len(cluster_points) / total_points * n_samples_per_cluster)
+    cluster_samples = cluster_points.sample(n_samples)
+    samples.append(cluster_samples)
 
-# Predict the cluster labels of the data
-labels = kmeans.predict(stacked[:, 2:5])
+# Concatenate all samples into a single DataFrame
+samples_df = pd.concat(samples)
+
+# Calculate entropy of original data
+original_entropy = calculate_entropy(df_sub.values)
+
+print(f'original_entropy: {original_entropy}')
+
+# Calculate entropy of sampled data
+sampled_entropy = calculate_entropy(samples_df.values)
+
+print(f'sampled_entropy: {sampled_entropy}')
 
 # Print the cluster centers
 if args.verbose:
