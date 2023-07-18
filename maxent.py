@@ -116,3 +116,13 @@ print(f'original_entropy: {original_entropy}')
 sampled_entropy = calculate_entropy(samples_df.values)
 print(f'sampled_entropy: {sampled_entropy}')
 
+# LHS
+n_dims = df_sub.shape[1]
+lhs_sample = lhs(n_dims, samples=args.n_subsamples)
+for i in range(n_dims):
+    lhs_sample[:, i] = lhs_sample[:, i] * (df_sub.iloc[:, i].max() - df_sub.iloc[:, i].min()) + df_sub.iloc[:, i].min()
+
+# Calculate entropy of LHS 
+sampled_entropy = calculate_entropy(lhs_sample)
+print(f'sampled_entropy: {sampled_entropy}')
+
