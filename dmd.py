@@ -30,8 +30,8 @@ for i, ts in enumerate(range(100, 10100, 100)):
 snapshots = np.concatenate([p, u, v, wz], axis=1)
 
 # Apply DMD
-dmd = DMD(svd_rank=2)
-dmd.fit(snapshots.T)
+dmd = DMD(svd_rank=3)
+dmd.fit(snapshots)
 
 # Print eigenvalues and plot modes and dynamics
 for idx, mode in enumerate(dmd.modes.T):
