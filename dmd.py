@@ -8,12 +8,7 @@ import matplotlib.pyplot as plt
 from fluidfoam import readscalar, readvector, readforce
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-nc", "--n_clusters", type=int, default=10, help="number of clusters")
-parser.add_argument("-ns", "--n_subsamples", type=int, default=100, help="number of subsamples")
 parser.add_argument("--path", type=str, default='.', help="path to simulation")
-parser.add_argument("--time", type=str, default='1000', help="time step to analyze")
-parser.add_argument("--plot", action='store_true', default=False, help="show plots")
-parser.add_argument("--verbose", action='store_true', default=False, help="verbose output")
 args = parser.parse_args()
 
 nx = 10800
