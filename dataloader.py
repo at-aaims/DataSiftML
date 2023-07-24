@@ -11,12 +11,13 @@ class DataLoader():
         self.path = path
         self.verbose = verbose
 
-    def read_solution(self, time):
+    def read_solution(self, time: str):
         # Read solution values from OpenFOAM simulation
-        p = readscalar(self.path, time, 'p.gz')
-        x, y, z = readvector(self.path, time, 'C.gz')
-        Ux, Uy, Uz = readvector(self.path, time, 'U.gz')
-        wx, wy, wz = readvector(self.path, time, 'vorticity.gz')
+        stime = str(time)
+        p = readscalar(self.path, stime, 'p.gz')
+        x, y, z = readvector(self.path, stime, 'C.gz')
+        Ux, Uy, Uz = readvector(self.path, stime, 'U.gz')
+        wx, wy, wz = readvector(self.path, stime, 'vorticity.gz')
         forces = readforce(self.path, time_name='0', name='forces')
 
         # Drag force is composed of both a viscous and pressure components
@@ -48,15 +49,14 @@ class DataLoader():
 
         df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy', 'wz'])
         X = df[['p', 'Ux', 'Uy']].to_numpy()
-        #df_sub = df[['p', 'wz']]
         Y = wz
 
         return X, Y
 
-    def write_to_csv(self, time):
+    def to_csv(self, Y, X, time, columns):
         """Output CSV file named by timestamp, e.g. 1000.csv"""
-        file_name = time + '.csv'
-        df.to_csv(file_name, index=False)
+        df = pd.DataFrame(np.concatenate((Y, X), axis=1), columns=columns)
+        df.to_csv(str(time) + '.csv', index=False)
 
     def create_sequences(path, sequence_length):
         """Read the CSV files and create sequences"""
@@ -88,4 +88,8 @@ if __name__ == "__main__":
     X, Y = dl.read_solution('1000')
     print(X.shape, Y.shape)
 
-
+    # Read solution values from OpenFOAM simulation
+    for i, ts in enumerate(range(100, 10100, 100)):
+        print(i, ts)
+        X, Y = dl.read_solution(ts)
+        dl.to_csv(Y, X, ts, columns=['wz', 'p', 'Ux', 'Uy'])
