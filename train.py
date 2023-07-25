@@ -9,9 +9,6 @@ from tensorflow.keras import layers
 import dataloader
 from args import args
 
-# parameters
-batch_size = 32
-
 # load data
 dl = dataloader.DataLoader(args.path)
 X, Y = dataloader.create_sequences(*dl.load_multiple_timesteps(100, 100))
@@ -33,7 +30,7 @@ model.summary()
 model.compile(loss='mae', optimizer='adam')
 
 # train model
-model.fit(X, Y, batch_size=batch_size, epochs=args.epochs)
+model.fit(X, Y, batch_size=args.batch, epochs=args.epochs)
 
 # save model
 model.save(f"{args.arch}/1")
