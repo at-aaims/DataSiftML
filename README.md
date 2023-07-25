@@ -13,8 +13,7 @@
 
 # show options
 
-    python jetfog.py -h 
-    python maxent.py -h
+    python args.py -h 
 
 # usage examples
 
@@ -22,3 +21,10 @@
 
     python maxent.py --path ./data --time 1000 -nc 10 -ns 1000 --plot
 
+    python train.py --path ./data --epochs 5 --batch 32
+
+    python dmd.py --path ./data
+
+# push to github
+
+    git push -u github main
