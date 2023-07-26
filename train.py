@@ -3,18 +3,21 @@ import numpy as np
 import os
 import tensorflow as tf
 
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer
+from sklearn.model_selection import train_test_split
 from tensorflow import keras
 from tensorflow.keras import layers
 
 import dataloader
 from args import args
+from helpers import tune, scale
 
 # load data
 dl = dataloader.DataLoader(args.path)
 X, Y = dataloader.create_sequences(*dl.load_multiple_timesteps(100, 100))
 print(X.shape, Y.shape)
 
-## reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
+# reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
 num_samples, num_sequences, sequence_length, num_features = X.shape
 X = X.reshape(num_samples * num_sequences, sequence_length, num_features)
 Y = Y.reshape(num_samples * num_sequences, sequence_length)
@@ -22,15 +25,36 @@ Y = np.expand_dims(Y, axis=-1)
 
 print(X.shape, Y.shape)
 
+# split data into train/test 
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=False)
+
+# scale the data
+scaler_x = eval(args.scaler)()
+X_train = scale(scaler_x.fit_transform, X_train)
+X_test = scale(scaler_x.transform, X_test)
+
 # define model
-model = importlib.import_module('archs.' + args.arch).build_model(X[0].shape)
+input_shape = X[0].shape
+model = importlib.import_module('archs.' + args.arch).build_model(input_shape)
 model.summary()
 
-# compile model
-model.compile(loss='mae', optimizer='adam')
-
 # train model
-model.fit(X, Y, batch_size=args.batch, epochs=args.epochs)
+if args.tune:
+    func = importlib.import_module('archs.' + args.arch).get_meta_model(input_shape)
+    model = tune(func, X_train, Y_train, X_test, Y_test, \
+                 batch_size=args.batch, epochs=5, max_epochs=args.epochs)
+    model.build(input_shape=input_shape)
+else:
+    model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs)
+
+# evaluate the model
+loss = model.evaluate(X_test, Y_test)
+print('Loss:', loss)
+
+# make a prediction
+prediction = model.predict(X_test)
+print('Prediction:', prediction)
 
 # save model
-model.save(f"{args.arch}/1")
+model.save(f"models/{args.arch}/1")
+

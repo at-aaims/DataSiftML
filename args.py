@@ -7,11 +7,14 @@ parser.add_argument("-nc", "--n_clusters", type=int, default=10, help="number of
 parser.add_argument("-ns", "--n_subsamples", type=int, default=100, help="number of subsamples")
 parser.add_argument('--arch', type=str, default='lstm', choices=archs, help='Type of neural network architectures')
 parser.add_argument("--path", type=str, default='.', help="path to simulation")
+parser.add_argument("--test_frac", type=float, default=0.1, help="fraction of data to hold out for testing")
 parser.add_argument("--time", type=str, default='1000', help="time step to analyze")
+parser.add_argument("--tune", action='store_true', default=False, help="run hyperparameter optimization")
 parser.add_argument("--plot", action='store_true', default=False, help="show plots")
 parser.add_argument("--epochs", type=int, default=5, help="number of epochs")
+choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
+parser.add_argument("--scaler", type=str, default="StandardScaler", choices=choices, help="scaler function")
 parser.add_argument("--batch", type=int, default=32, help="batch size")
 parser.add_argument("--verbose", action='store_true', default=False, help="verbose output")
 args = parser.parse_args()
-
 
