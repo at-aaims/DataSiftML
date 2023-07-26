@@ -1,6 +1,7 @@
 """This script computes MaxEnt using descriptor-based technique"""
 
 import dataloader
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -13,6 +14,25 @@ write_interval = 100
 num_time_steps = 100
 
 X, Y = dl.load_multiple_timesteps(write_interval, num_time_steps)
+time, drag = dl.load_forces()
+# times = np.linspace(0, 9999, 10000)
+
+data = np.vstack((time, drag))
+
+kmeans = KMeans(n_clusters=2, random_state=0)
+kmeans.fit(data)
+prediction = kmeans.predict(data)
+print(prediction)
+print(drag)
+
+if args.plot:
+   plt.figure()
+   plt.plot(time, drag)
+   plt.xlabel('t')
+   plt.ylabel('drag')
+   plt.ylim(-10, 10) 
+   plt.title('Drag history')
+   plt.show()
 
 # extract data at a single point for all times
 pid = 27
@@ -52,3 +72,5 @@ kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
 kmeans.fit(df)
 df['cluster'] = kmeans.predict(df)
 print(df['cluster'])
+
+# Compute probability distributions

@@ -11,6 +11,13 @@ class DataLoader():
         self.path = path
         self.verbose = verbose
 
+    def load_forces(self):
+        forces = readforce(self.path, time_name='0', name='forces')
+        # Drag force is composed of both a viscous and pressure components
+        time = forces[:, 0]
+        drag = forces[:, 1] + forces[:, 2]
+        return time, drag
+
     def load_single_timestep(self, time: str):
         # Read solution values from OpenFOAM simulation
         stime = str(time)
@@ -18,15 +25,6 @@ class DataLoader():
         x, y, z = readvector(self.path, stime, 'C.gz')
         Ux, Uy, Uz = readvector(self.path, stime, 'U.gz')
         wx, wy, wz = readvector(self.path, stime, 'vorticity.gz')
-        forces = readforce(self.path, time_name='0', name='forces')
-
-        # Drag force is composed of both a viscous and pressure components
-        drag = forces[:, 1] + forces[:, 2]
-
-        if self.verbose:
-            print('force.shape:', forces.shape)
-            print('drag.shape:', drag.shape)
-            print(drag)
 
         # Add an extra dimension
         p = np.expand_dims(p, axis=1)
@@ -37,15 +35,6 @@ class DataLoader():
         wz = np.expand_dims(wz, axis=1)
 
         stacked = np.hstack((x, y, p, Ux, Uy, wz))
-
-        if self.verbose:
-            print(p.shape)
-            print(x.shape)
-            print(y.shape)
-            print(Ux.shape)
-            print(Uy.shape)
-            print(wz.shape)
-            print(stacked.shape)
 
         df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy', 'wz'])
         X = df[['p', 'Ux', 'Uy']].to_numpy()
