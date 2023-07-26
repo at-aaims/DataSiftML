@@ -1,3 +1,6 @@
+"""This script computes MaxEnt directly on primitive flow variables 
+   using kernel density estimation (KDE)"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
