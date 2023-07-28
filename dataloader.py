@@ -18,6 +18,12 @@ class DataLoader():
         drag = forces[:, 1] + forces[:, 2]
         return time, drag
 
+    def load_xyz(self):
+        x, y, z = readvector(self.path, '0', 'C.gz')
+        x = np.expand_dims(x, axis=1)
+        y = np.expand_dims(y, axis=1)
+        return x, y
+
     def load_single_timestep(self, time: str):
         # Read solution values from OpenFOAM simulation
         stime = str(time)
@@ -130,5 +136,4 @@ if __name__ == "__main__":
 #        dl.to_csv(Y, X, ts, columns=['wz', 'p', 'Ux', 'Uy'])
 
     X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
-    
     print(X.shape, Y.shape)

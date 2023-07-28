@@ -6,3 +6,5 @@ fluidfoam==0.2.5
 pyDOE==0.3.8
 pydmd==0.4.1
 keras-tuner==1.3.5
+python-sensors==0.3.5
+networkx==3.1
