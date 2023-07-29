@@ -12,6 +12,8 @@ import scipy
 from args import args
 from sklearn.cluster import KMeans
 
+figsize = (10, 2)
+
 dl = dataloader.DataLoader(args.path)
 
 write_interval = 100
@@ -35,10 +37,11 @@ if True:
     print(y_pred.shape)
 
     if args.plot:
+        plt.figure(figsize=figsize)
         plt.scatter(x, y, c=kmeans.labels_, cmap='tab10')
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title('KMeans Clustering')
+        plt.title('KMeans clustering of vorticity')
         plt.colorbar()
         plt.show()
 
@@ -138,10 +141,11 @@ if True:
         kmeans.labels_[~mask] = -1 
         # and set their color to white so they won't be visible
         cmap_white_first = mcolors.ListedColormap(['white', *plt.cm.viridis.colors])
+        plt.figure(figsize=figsize)
         plt.scatter(x, y, c=kmeans.labels_, cmap=cmap_white_first, vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title('KMeans Clustering')
+        plt.title('Features with highest entropy')
         cbar = plt.colorbar(ticks=np.arange(0, max(kmeans.labels_), 1))
         cbar.set_label('Cluster Label')
         plt.show()

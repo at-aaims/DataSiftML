@@ -19,7 +19,7 @@
 
     python jetfog.py -f heaviside -e 200 --plot --test_frac 0.01 --spacing gaussian --noise 0.1
 
-    python maxent.py --path ./data --time 1000 -nc 10 -ns 1000 --plot
+    python maxent3.py --path ./data -nc 10 --plot --cutoff 0.5
 
     python train.py --path ./data --epochs 5 --batch 32
 
