@@ -25,8 +25,12 @@
 
     python dmd.py --path ./data
 
+# push to gitlab
+
+    git push -u origin main
+
 # push to github
 
     git push -u github main
 
-# test change
+
