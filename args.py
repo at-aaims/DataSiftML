@@ -15,6 +15,7 @@ parser.add_argument("--epochs", type=int, default=5, help="number of epochs")
 choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
 parser.add_argument("--scaler", type=str, default="StandardScaler", choices=choices, help="scaler function")
 parser.add_argument("--batch", type=int, default=32, help="batch size")
+parser.add_argument("--cutoff", type=float, default=0.5, help="optimal data cutoff factor, e.g., 0.1 keep top ten percent")
 parser.add_argument("--verbose", action='store_true', default=False, help="verbose output")
 args = parser.parse_args()
 

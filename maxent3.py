@@ -3,6 +3,7 @@
 import dataloader
 import math
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -21,24 +22,29 @@ x, y = dl.load_xyz()
 _, vorticity = dl.load_multiple_timesteps(write_interval, num_time_steps)
 print(vorticity.shape)
 
-for timestep in range(vorticity.shape[0]):
+#for timestep in range(vorticity.shape[0]):
+if True:
+    timestep = 70
 
     # K-means clustering
     data = vorticity[timestep, :].reshape(-1, 1)
     kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
     kmeans.fit(data)
     y_pred = kmeans.predict(data)
+    print(y_pred)
     print(y_pred.shape)
 
     if args.plot:
-        plt.scatter(x, y, c=kmeans.labels_, cmap='viridis')
+        plt.scatter(x, y, c=kmeans.labels_, cmap='tab10')
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title('KMeans Clustering')
+        plt.colorbar()
         plt.show()
 
     clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.n_clusters)]
     clusters = [cluster.flatten() for cluster in clusters]
+    print(clusters)
 
     # Initialize a list to store your probability distributions and their bin edges
     prob_dists = []
@@ -76,21 +82,68 @@ for timestep in range(vorticity.shape[0]):
         for j in range(n_dists):
             p = prob_dists[i] + 1e-10 # to avoid division by zero
             q = prob_dists[j] + 1e-10 # to avoid division by zero
-            adj_matrix[i, j] = np.sum(scipy.stats.entropy(p, q))
+            adj_matrix[i, j] = scipy.stats.entropy(p, q)
 
     df = pd.DataFrame(adj_matrix)
     print(df)
 
     # Create a graph from the adjacency matrix and compute the minimum cut
-    G = nx.from_numpy_array(adj_matrix)
+    G = nx.from_numpy_array(adj_matrix, create_using=nx.DiGraph())
 
-    source = 0
-    sink = 1
+    # Select top clusters according to cutoff_threshold
+    cutoff_threshold = 0.5
+    in_strengths = np.sum(adj_matrix, axis=0)
+    out_strengths = np.sum(adj_matrix, axis=1)
+    # for verification
+    #in_strengths = dict(G.in_degree(weight='weight')).values()
+    #out_strengths = dict(G.out_degree(weight='weight')).values()
+    print("in-strengths:", in_strengths)
+    print("out-strengths:", out_strengths)
 
-    # Compute the minimum cut
-    #cut_value, partition = nx.minimum_cut(G, source, sink)
-    cut_value, partition = nx.stoer_wagner(G)
+    top_instrength = np.argsort(in_strengths)
+    print("sorted in_strength:", in_strengths[top_instrength])
+    top_outstrength = np.argsort(out_strengths) 
 
-    print("Cut value:", cut_value)
-    print("Partition:", partition)
+    # control vs effect - perturbation vs effect
+    print(top_instrength)  # id's of clusters sorted based on in_strength
+    print(top_outstrength)
+
+    threshold = cutoff_threshold * np.sum(in_strengths) # same as when computing with out_strength
+    print(threshold)
+
+    sumstrength = 0
+    i = len(in_strengths) - 1
+    optimal_subset = []
+   
+    while sumstrength < threshold:
+        optimal_subset.append(top_instrength[i])
+        sumstrength += in_strengths[top_instrength[i]]
+        i -= 1
+
+    print('optimal subset of clusters:', optimal_subset)
+
+    num_samples = len(kmeans.labels_)
+    mask = np.isin(kmeans.labels_, optimal_subset)
+    num_samples_compressed = len(kmeans.labels_[mask])
+    print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
+          f"compression factor: {num_samples / num_samples_compressed:.1f}X")
+
+    # Find the indices of the original dataset, data, that have optimal clusters
+    subsampled_data = data[mask].ravel()
+    print(subsampled_data)
+
+    # Show only optimal clusters
+    if args.plot:
+        # set clusters below threshold to -1 
+        kmeans.labels_[~mask] = -1 
+        # and set their color to white so they won't be visible
+        cmap_white_first = mcolors.ListedColormap(['white', *plt.cm.viridis.colors])
+        plt.scatter(x, y, c=kmeans.labels_, cmap=cmap_white_first, vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title('KMeans Clustering')
+        cbar = plt.colorbar(ticks=np.arange(0, max(kmeans.labels_), 1))
+        cbar.set_label('Cluster Label')
+        plt.show()
+
 
