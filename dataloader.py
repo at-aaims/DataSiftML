@@ -43,8 +43,8 @@ class DataLoader():
         stacked = np.hstack((x, y, p, Ux, Uy, wz))
 
         df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy', 'wz'])
-        X = df[['p', 'Ux', 'Uy']].to_numpy()
-        Y = wz
+        X = df[['Ux', 'Uy']].to_numpy()
+        Y = p
 
         return X, Y
 
@@ -66,7 +66,7 @@ class DataLoader():
             u[i, :], v[i, :], _ = readvector(self.path, str(ts), 'U.gz')
             _, _, wz[i, :] = readvector(self.path, str(ts), 'vorticity.gz')
 
-        X, Y = np.stack((p, u, v), axis=-1), wz
+        X, Y = np.stack((u, v), axis=-1), p
         return X, Y
 
     def to_csv(self, Y, X, time, columns):
