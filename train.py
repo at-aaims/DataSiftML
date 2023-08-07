@@ -14,7 +14,9 @@ from helpers import tune, scale
 
 # load data
 dl = dataloader.DataLoader(args.path)
-X, Y = dataloader.create_sequences(*dl.load_multiple_timesteps(100, 100))
+X, Y = dataloader.create_sequences(*dl.load_multiple_timesteps(args.write_interval, 
+                                                               args.num_time_stamps,
+                                                               target=args.target))
 print(X.shape, Y.shape)
 
 # reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)

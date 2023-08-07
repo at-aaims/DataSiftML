@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 
+from stream import compute_stream_function
 from fluidfoam import readscalar, readvector, readforce
 
 
@@ -24,7 +25,7 @@ class DataLoader():
         y = np.expand_dims(y, axis=1)
         return x, y
 
-    def load_single_timestep(self, time: str):
+    def load_single_timestep(self, time: str, target='p'):
         # Read solution values from OpenFOAM simulation
         stime = str(time)
         p = readscalar(self.path, stime, 'p.gz')
@@ -44,11 +45,20 @@ class DataLoader():
 
         df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy', 'wz'])
         X = df[['Ux', 'Uy']].to_numpy()
-        Y = p
+
+        if target == 'p':
+            Y = p
+        elif target == 'wz':
+            Y = wz
+        elif target == 'stream':
+            #Y =  df[['p', 'wz']].to_numpy()
+            Y = compute_stream_function(u, v, omega)
+        else:
+            raiseValueError('target not supported')
 
         return X, Y
 
-    def load_multiple_timesteps(self, write_interval, num_timesteps):
+    def load_multiple_timesteps(self, write_interval, num_timesteps, target='p'):
 
         p = readscalar(self.path, str(write_interval), 'p.gz')
         num_pts = p.shape[0]
@@ -66,7 +76,17 @@ class DataLoader():
             u[i, :], v[i, :], _ = readvector(self.path, str(ts), 'U.gz')
             _, _, wz[i, :] = readvector(self.path, str(ts), 'vorticity.gz')
 
-        X, Y = np.stack((u, v), axis=-1), p
+        X = np.stack((u, v), axis=-1)
+
+        if target == 'p':
+            Y = p
+        elif target == 'wz':
+            Y = wz
+        elif target == 'stream':
+            Y = compute_stream_function(u, v, wz)
+        else:
+            raiseValueError('target not supported')
+
         return X, Y
 
     def to_csv(self, Y, X, time, columns):

@@ -1,15 +1,17 @@
-"""This script computes MaxEnt using Murali's approach with vorticity"""
+"""This script computes MaxEnt using Murali's approach with a collective variable
+   such as vorticity, pressure, or a combination"""
 
 import dataloader
 import math
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
+import matplotlib.colors as colors
 import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
 
 from args import args
+from itertools import cycle
 from sklearn.cluster import KMeans
 
 figsize = (10, 2)
@@ -21,28 +23,49 @@ num_time_steps = 100
 
 x, y = dl.load_xyz()
 
-_, vorticity = dl.load_multiple_timesteps(write_interval, num_time_steps)
-print(vorticity.shape)
+# cv: collective variable 
+_, cv = dl.load_multiple_timesteps(write_interval, num_time_steps, target=args.target)
+print(cv.shape)
 
 #for timestep in range(vorticity.shape[0]):
 if True:
     timestep = 70
 
     # K-means clustering
-    data = vorticity[timestep, :].reshape(-1, 1)
+    data = cv[timestep, :].reshape(-1, 1)
     kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
     kmeans.fit(data)
+    centroids = kmeans.cluster_centers_
+    labels = kmeans.labels_
     y_pred = kmeans.predict(data)
     print(y_pred)
     print(y_pred.shape)
 
     if args.plot:
         plt.figure(figsize=figsize)
-        plt.scatter(x, y, c=kmeans.labels_, cmap='tab10')
+        plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap='tab10')
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title('KMeans clustering of vorticity')
+        plt.title(f'KMeans clustering of {args.target}')
         plt.colorbar()
+        plt.show()
+
+    # Following is from Greg
+    if False:
+        # Use all colors that matplotlib provides by default.
+        colors_ = cycle(colors.cnames.keys())
+
+        fig, ax = plt.subplots(figsize=figsize)
+        alpha = 1.0
+        for this_centroid, k, col in zip(centroids, range(args.n_clusters), colors_):
+            print(this_centroid, k, col)
+            mask = labels == k
+            ax.scatter(x[mask], y[mask], c=col, marker='.', alpha=alpha)
+
+        ax.set_autoscaley_on(False)
+        title = 'num_clusters = %s ' % str(args.n_clusters)
+        ax.set_title( title )
+
         plt.show()
 
     clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.n_clusters)]
@@ -86,6 +109,8 @@ if True:
             p = prob_dists[i] + 1e-10 # to avoid division by zero
             q = prob_dists[j] + 1e-10 # to avoid division by zero
             adj_matrix[i, j] = scipy.stats.entropy(p, q)
+
+    pd.set_option('display.float_format', lambda x: '{:.3f}'.format(x))
 
     df = pd.DataFrame(adj_matrix)
     print(df)
@@ -140,14 +165,13 @@ if True:
         # set clusters below threshold to -1 
         kmeans.labels_[~mask] = -1 
         # and set their color to white so they won't be visible
-        cmap_white_first = mcolors.ListedColormap(['white', *plt.cm.viridis.colors])
+        cmap_white_first = colors.ListedColormap(['white', *plt.cm.viridis.colors])
         plt.figure(figsize=figsize)
-        plt.scatter(x, y, c=kmeans.labels_, cmap=cmap_white_first, vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+        plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap=cmap_white_first, \
+                    vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title('Features with highest entropy')
         cbar = plt.colorbar(ticks=np.arange(0, max(kmeans.labels_), 1))
         cbar.set_label('Cluster Label')
         plt.show()
-
-
