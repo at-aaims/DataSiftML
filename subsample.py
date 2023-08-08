@@ -7,7 +7,7 @@ from pyDOE import lhs
 
 def subsample_random(X, num_samples, random_seed=42):
     np.random.seed(random_seed)
-    return np.random.choice(X.shape[0], num_samples, replace=False)
+    return np.random.choice(X.shape[1], num_samples, replace=False)
 
 
 if __name__ == "__main__":
