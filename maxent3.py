@@ -18,27 +18,24 @@ figsize = (10, 2)
 
 dl = dataloader.DataLoader(args.path)
 
-write_interval = 100
-num_time_steps = 100
-
 x, y = dl.load_xyz()
 
-# cv: collective variable 
-_, cv = dl.load_multiple_timesteps(write_interval, num_time_steps, target=args.target)
-print(cv.shape)
+X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+print(X.shape, Y.shape)
 
-#for timestep in range(vorticity.shape[0]):
-if True:
-    timestep = 70
+#if True:
+#    timestep = 70
+
+for timestep in range(Y.shape[0]):
 
     # K-means clustering
-    data = cv[timestep, :].reshape(-1, 1)
+    data = Y[timestep, :].reshape(-1, 1)
     kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
     kmeans.fit(data)
     centroids = kmeans.cluster_centers_
     labels = kmeans.labels_
     y_pred = kmeans.predict(data)
-    print(y_pred)
+    #print(y_pred)
     print(y_pred.shape)
 
     if args.plot:
@@ -70,7 +67,7 @@ if True:
 
     clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.n_clusters)]
     clusters = [cluster.flatten() for cluster in clusters]
-    print(clusters)
+    #print(clusters)
 
     # Initialize a list to store your probability distributions and their bin edges
     prob_dists = []
@@ -111,6 +108,9 @@ if True:
             adj_matrix[i, j] = scipy.stats.entropy(p, q)
 
     pd.set_option('display.float_format', lambda x: '{:.3f}'.format(x))
+    
+    total_entropy = np.sum(adj_matrix)
+    print(f"total entropy: {total_entropy}")
 
     df = pd.DataFrame(adj_matrix)
     print(df)
@@ -157,11 +157,18 @@ if True:
           f"compression factor: {num_samples / num_samples_compressed:.1f}X")
 
     # Find the indices of the original dataset, data, that have optimal clusters
-    subsampled_data = data[mask].ravel()
-    print(subsampled_data)
+    subsampled_X = X[timestep, mask, :]
+    print(subsampled_X.shape)
+    # (100, 10800, 2) (100, 10800)
+    subsampled_Y = np.expand_dims(data[mask].ravel(), axis=1)
+    print(subsampled_Y.shape)
+
+    df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
+    df.to_csv(f"data_{timestep:05}.csv", index=False)
 
     # Show only optimal clusters
-    if args.plot:
+    #if args.plot:
+    if True:
         # set clusters below threshold to -1 
         kmeans.labels_[~mask] = -1 
         # and set their color to white so they won't be visible
@@ -174,4 +181,5 @@ if True:
         plt.title('Features with highest entropy')
         cbar = plt.colorbar(ticks=np.arange(0, max(kmeans.labels_), 1))
         cbar.set_label('Cluster Label')
-        plt.show()
+        #plt.show()
+        plt.savefig(f'frame_{timestep:04d}.png', dpi=100)

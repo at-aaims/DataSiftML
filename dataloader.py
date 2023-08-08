@@ -82,6 +82,8 @@ class DataLoader():
             Y = p
         elif target == 'wz':
             Y = wz
+        elif target == 'pwz':
+            Y = np.stack((p, wz), axis=1)
         elif target == 'stream':
             Y = compute_stream_function(u, v, wz)
         else:
