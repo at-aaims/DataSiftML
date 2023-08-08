@@ -11,13 +11,21 @@ from tensorflow.keras import layers
 import dataloader
 from args import args
 from helpers import tune, scale
+from subsample import subsample_random
 
 # load data
 dl = dataloader.DataLoader(args.path)
-X, Y = dataloader.create_sequences(*dl.load_multiple_timesteps(args.write_interval, 
-                                                               args.num_time_steps,
-                                                               target=args.target))
+X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
 print(X.shape, Y.shape)
+
+# subsample data
+if args.sample == "random":
+    indices = subsample_random(X, args.num_samples)
+    X, Y = X[:, indices, :], Y[:, indices]
+    print(X.shape, Y.shape)
+
+# create time sequences
+X, Y = dataloader.create_sequences(X, Y) 
 
 # reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
 num_samples, num_sequences, sequence_length, num_features = X.shape
