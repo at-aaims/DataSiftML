@@ -12,12 +12,12 @@ class DataLoader():
         self.path = path
         self.verbose = verbose
 
-    def load_forces(self):
+    def load_forces(self, write_interval=100):
         forces = readforce(self.path, time_name='0', name='forces')
         # Drag force is composed of both a viscous and pressure components
         time = forces[:, 0]
         drag = forces[:, 1] + forces[:, 2]
-        return time, drag
+        return time[::write_interval], drag[::write_interval]
 
     def load_xyz(self):
         x, y, z = readvector(self.path, '0', 'C.gz')
@@ -84,6 +84,9 @@ class DataLoader():
             Y = wz
         elif target == 'pwz':
             Y = np.stack((p, wz), axis=1)
+        elif target == 'drag':
+            time, drag = self.load_forces()
+            Y = np.repeat(drag[:, np.newaxis], X.shape[1], axis=1)
         elif target == 'stream':
             Y = compute_stream_function(u, v, wz)
         else:

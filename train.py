@@ -19,7 +19,7 @@ X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, targ
 print(X.shape, Y.shape)
 
 # subsample data
-if args.sample == "random":
+if args.subsample == 'random':
     indices = subsample_random(X, args.num_samples)
     X, Y = X[:, indices, :], Y[:, indices]
     print(X.shape, Y.shape)
@@ -63,7 +63,7 @@ print('Loss:', loss)
 
 # make a prediction
 prediction = model.predict(X_test)
-print('Prediction:', prediction)
+#print('Prediction:', prediction)
 
 # save model
 model.save(f"models/{args.arch}/1")

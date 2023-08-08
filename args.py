@@ -14,11 +14,11 @@ parser.add_argument('--num_time_steps', type=int, default=100, help='OpenFOAM nu
 parser.add_argument('--path', type=str, default='.', help='path to simulation')
 parser.add_argument('--plot', action='store_true', default=False, help='show plots')
 choices = ['random', 'random-weighted', 'lhs', 'maxent', 'nosample']
-parser.add_argument('--sample', type=str, default='random', choices=choices, help='sampling strategy')
+parser.add_argument('--subsample', type=str, default='random', choices=choices, help='sampling strategy')
 choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
 parser.add_argument('--scaler', type=str, default='StandardScaler', choices=choices, help='scaler function')
 parser.add_argument('--test_frac', type=float, default=0.1, help='fraction of data to hold out for testing')
-parser.add_argument('--target', type=str, default='wz', choices=['p', 'wz', 'pwz', 'stream'], help='training target')
+parser.add_argument('--target', type=str, default='wz', choices=['drag', 'p', 'wz', 'pwz', 'stream'], help='training target')
 parser.add_argument('--time', type=str, default='1000', help='time step to analyze')
 parser.add_argument('--tune', action='store_true', default=False, help='run hyperparameter optimization')
 parser.add_argument('--verbose', action='store_true', default=False, help='verbose output')

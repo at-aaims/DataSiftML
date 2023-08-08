@@ -23,7 +23,7 @@
 
     python maxent3.py --path $DPATH -nc 10 --plot --cutoff 0.5 --target wz
 
-    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample
+    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random
 
     python dmd.py --path $DPATH
 
