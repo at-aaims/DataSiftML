@@ -21,7 +21,7 @@
 
     python jetfog.py -f heaviside -e 200 --plot --test_frac 0.01 --spacing gaussian --noise 0.1
 
-    python maxent3.py --path $DPATH -nc 10 --plot --cutoff 0.5 --target wz
+    python maxent.py --path $DPATH -nc 10 --plot --cutoff 0.5 --target wz
 
     python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random
 

@@ -1,126 +1,185 @@
-"""This script computes MaxEnt directly on primitive flow variables 
-   using kernel density estimation (KDE)"""
+"""This script computes MaxEnt using Murali's approach with a collective variable
+   such as vorticity, pressure, or a combination"""
 
+import dataloader
+import math
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import networkx as nx
 import numpy as np
 import pandas as pd
-
-from fluidfoam import readscalar, readvector, readforce
-from pyDOE import lhs
-from sklearn.cluster import KMeans, Birch
-from sklearn.neighbors import KernelDensity
+import scipy
 
 from args import args
+from itertools import cycle
+from sklearn.cluster import KMeans
 
-def calculate_entropy(data):
-    kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(data)
-    log_dens = kde.score_samples(data)
-    entropy = -np.sum(np.exp(log_dens) * log_dens)
-    return entropy
+figsize = (10, 2)
 
-# Read solution values from OpenFOAM simulation
-p = readscalar(args.path, args.time, 'p.gz')
-x, y, z = readvector(args.path, args.time, 'C.gz')
-Ux, Uy, Uz = readvector(args.path, args.time, 'U.gz')
-wx, wy, wz = readvector(args.path, args.time, 'vorticity.gz')
-forces = readforce(args.path, time_name='0', name='forces')
+dl = dataloader.DataLoader(args.path)
 
-# Drag force is composed of both a viscous and pressure components
-drag = forces[:, 1] + forces[:, 2]
+x, y = dl.load_xyz()
 
-if args.verbose:
-    print('force.shape:', forces.shape)
-    print('drag.shape:', drag.shape)
-    print(drag)
+X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+print(X.shape, Y.shape)
 
-#if args.plot:
-#    plt.figure()
-#    plt.plot(forces[:, 0], drag)
-#    plt.xlabel('t')
-#    plt.ylabel('drag')
-#    plt.ylim(-10, 10) 
-#    plt.title('Drag history')
-#    plt.show()
+#if True:
+#    timestep = 70
 
-# Add an extra dimension
-p = np.expand_dims(p, axis=1)
-x = np.expand_dims(x, axis=1)
-y = np.expand_dims(y, axis=1)
-Ux = np.expand_dims(Ux, axis=1)
-Uy = np.expand_dims(Uy, axis=1)
-wz = np.expand_dims(wz, axis=1)
+for timestep in range(Y.shape[0]):
 
-stacked = np.hstack((x, y, p, Ux, Uy, wz))
+    # K-means clustering
+    data = Y[timestep, :].reshape(-1, 1)
+    kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
+    kmeans.fit(data)
+    centroids = kmeans.cluster_centers_
+    labels = kmeans.labels_
+    y_pred = kmeans.predict(data)
+    #print(y_pred)
+    print(y_pred.shape)
 
-if args.verbose:
-    print(p.shape)
-    print(x.shape)
-    print(y.shape)
-    print(Ux.shape)
-    print(Uy.shape)
-    print(wz.shape)
-    print(stacked.shape)
+    if args.plot:
+        plt.figure(figsize=figsize)
+        plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap='tab10')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title(f'KMeans clustering of {args.target}')
+        plt.colorbar()
+        plt.show()
 
-df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy', 'wz'])
-#df_sub = df[['p', 'Ux', 'Uy']]
-df_sub = df[['p', 'wz']]
+    # Following is from Greg
+    if False:
+        # Use all colors that matplotlib provides by default.
+        colors_ = cycle(colors.cnames.keys())
 
-# Output CSV file named by timestamp, e.g. 1000.csv
-file_name = args.time + '.csv'
-df.to_csv(file_name, index=False)
+        fig, ax = plt.subplots(figsize=figsize)
+        alpha = 1.0
+        for this_centroid, k, col in zip(centroids, range(args.n_clusters), colors_):
+            print(this_centroid, k, col)
+            mask = labels == k
+            ax.scatter(x[mask], y[mask], c=col, marker='.', alpha=alpha)
 
-with open(file_name, 'a') as file:
-    drag_value = drag[int(args.time)]
-    file.write(f"# Drag: {drag_value}\n")
+        ax.set_autoscaley_on(False)
+        title = 'num_clusters = %s ' % str(args.n_clusters)
+        ax.set_title( title )
 
-# K-means clustering
-kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
-kmeans.fit(df_sub)
-df_sub['cluster'] = kmeans.predict(df_sub)
+        plt.show()
 
-# Plot
-if args.plot:
-    plt.scatter(x, y, c=kmeans.labels_, cmap='viridis')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('KMeans Clustering')
-    plt.show()
+    clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.n_clusters)]
+    clusters = [cluster.flatten() for cluster in clusters]
+    #print(clusters)
 
-# Print the cluster centers
-if args.verbose:
-    print("Cluster centers:")
-    print(kmeans.cluster_centers_)
+    # Initialize a list to store your probability distributions and their bin edges
+    prob_dists = []
+    bin_edges_list = []
 
-# Perform sampling of clusters
-n_samples_per_cluster = args.n_subsamples // args.n_clusters
-print(f'num samples per cluster: {n_samples_per_cluster}')
-samples = []
-total_points = len(df_sub)
-print(f"total points: {total_points}")
-for cluster in range(args.n_clusters):
-    cluster_points = df_sub[df_sub['cluster'] == cluster]
-    # Proportional sampling according to cluster size
-    n_samples = int(len(cluster_points) / total_points * n_samples_per_cluster)
-    cluster_samples = cluster_points.sample(n_samples)
-    samples.append(cluster_samples)
+    # Specify a consistent bin range and count
+    bin_range = (np.min([np.min(cluster) for cluster in clusters]), 
+                 np.max([np.max(cluster) for cluster in clusters]))
+    num_bins = 50  # or choose another suitable value
 
-# Concatenate all samples into a single DataFrame
-samples_df = pd.concat(samples)
+    for cluster in clusters:
+        counts, bin_edges = np.histogram(cluster, bins=num_bins, range=bin_range, density=False)
+        prob_dist = counts / np.sum(counts)
+        prob_dists.append(prob_dist)
+        bin_edges_list.append(bin_edges)
 
-# Calculate entropy of original data
-original_entropy = calculate_entropy(df_sub.values)
-print(f'original entropy: {original_entropy}')
+    if args.plot:
+        # Create a grid of probability distribution subplots
+        grid_size = math.ceil(math.sqrt(len(clusters)))
+        fig, axes = plt.subplots(grid_size, grid_size, figsize=(9, 9))
+        axes = axes.flatten()
+        for i, (prob_dist, bin_edges, ax) in enumerate(zip(prob_dists, bin_edges_list, axes)):
+            ax.bar(bin_edges[:-1], prob_dist, width=np.diff(bin_edges), align="edge")
+            ax.set_title(f'Cluster {i + 1}')
+        for ax in axes[len(clusters):]: ax.remove()
+        plt.tight_layout()
+        plt.show()
 
-# Calculate entropy of sampled data
-sampled_entropy = calculate_entropy(samples_df.values)
-print(f'cluster-sampled entropy: {sampled_entropy}')
+    n_dists = args.n_clusters
 
-# LHS
-n_dims = df_sub.shape[1]
-lhs_sample = lhs(n_dims, samples=args.n_subsamples)
-for i in range(n_dims):
-    lhs_sample[:, i] = lhs_sample[:, i] * (df_sub.iloc[:, i].max() - df_sub.iloc[:, i].min()) + df_sub.iloc[:, i].min()
+    # Compute adjacency matrix containing relative entropy for each pair of distributions
+    adj_matrix = np.zeros((n_dists, n_dists))
 
-# Calculate entropy of LHS 
-sampled_entropy = calculate_entropy(lhs_sample)
-print(f'LHS-sampled entropy: {sampled_entropy}')
+    for i in range(n_dists):
+        for j in range(n_dists):
+            p = prob_dists[i] + 1e-10 # to avoid division by zero
+            q = prob_dists[j] + 1e-10 # to avoid division by zero
+            adj_matrix[i, j] = scipy.stats.entropy(p, q)
+
+    pd.set_option('display.float_format', lambda x: '{:.3f}'.format(x))
+    
+    total_entropy = np.sum(adj_matrix)
+    print(f"total entropy: {total_entropy}")
+
+    df = pd.DataFrame(adj_matrix)
+    print(df)
+
+    # Create a graph from the adjacency matrix and compute the minimum cut
+    G = nx.from_numpy_array(adj_matrix, create_using=nx.DiGraph())
+
+    # Select top clusters according to cutoff_threshold
+    cutoff_threshold = 0.5
+    in_strengths = np.sum(adj_matrix, axis=0)
+    out_strengths = np.sum(adj_matrix, axis=1)
+    # for verification
+    #in_strengths = dict(G.in_degree(weight='weight')).values()
+    #out_strengths = dict(G.out_degree(weight='weight')).values()
+    print("in-strengths:", in_strengths)
+    print("out-strengths:", out_strengths)
+
+    top_instrength = np.argsort(in_strengths)
+    print("sorted in_strength:", in_strengths[top_instrength])
+    top_outstrength = np.argsort(out_strengths) 
+
+    # control vs effect - perturbation vs effect
+    print(top_instrength)  # id's of clusters sorted based on in_strength
+    print(top_outstrength)
+
+    threshold = cutoff_threshold * np.sum(in_strengths) # same as when computing with out_strength
+    print(threshold)
+
+    sumstrength = 0
+    i = len(in_strengths) - 1
+    optimal_subset = []
+   
+    while sumstrength < threshold:
+        optimal_subset.append(top_instrength[i])
+        sumstrength += in_strengths[top_instrength[i]]
+        i -= 1
+
+    print('optimal subset of clusters:', optimal_subset)
+
+    num_samples = len(kmeans.labels_)
+    mask = np.isin(kmeans.labels_, optimal_subset)
+    num_samples_compressed = len(kmeans.labels_[mask])
+    print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
+          f"compression factor: {num_samples / num_samples_compressed:.1f}X")
+
+    # Find the indices of the original dataset, data, that have optimal clusters
+    subsampled_X = X[timestep, mask, :]
+    print(subsampled_X.shape)
+    # (100, 10800, 2) (100, 10800)
+    subsampled_Y = np.expand_dims(data[mask].ravel(), axis=1)
+    print(subsampled_Y.shape)
+
+    df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
+    df.to_csv(f"data_{timestep:05}.csv", index=False)
+
+    # Show only optimal clusters
+    #if args.plot:
+    if True:
+        # set clusters below threshold to -1 
+        kmeans.labels_[~mask] = -1 
+        # and set their color to white so they won't be visible
+        cmap_white_first = colors.ListedColormap(['white', *plt.cm.viridis.colors])
+        plt.figure(figsize=figsize)
+        plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap=cmap_white_first, \
+                    vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title('Features with highest entropy')
+        cbar = plt.colorbar(ticks=np.arange(0, max(kmeans.labels_), 1))
+        cbar.set_label('Cluster Label')
+        #plt.show()
+        plt.savefig(f'frame_{timestep:04d}.png', dpi=100)
