@@ -13,9 +13,14 @@ from args import args
 from helpers import tune, scale
 from subsample import subsample_random
 
-# load data
-dl = dataloader.DataLoader(args.path)
-X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+
+if args.subsample == 'maxent':
+    data = np.load('subsampled.npz')
+    X, Y = data['X'], np.squeeze(data['Y'])
+else: 
+    dl = dataloader.DataLoader(args.path)
+    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+
 print(X.shape, Y.shape)
 
 # subsample data

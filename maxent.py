@@ -13,18 +13,21 @@ import scipy
 from args import args
 from itertools import cycle
 from sklearn.cluster import KMeans
+from subsample import subsample_random
 
 figsize = (10, 2)
 
 dl = dataloader.DataLoader(args.path)
-
 x, y = dl.load_xyz()
-
 X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
 print(X.shape, Y.shape)
 
 #if True:
 #    timestep = 70
+
+mins = 1E6
+Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
+Yout = np.zeros((args.num_time_steps, args.num_samples, 1))
 
 for timestep in range(Y.shape[0]):
 
@@ -45,7 +48,8 @@ for timestep in range(Y.shape[0]):
         plt.ylabel('Y')
         plt.title(f'KMeans clustering of {args.target}')
         plt.colorbar()
-        plt.show()
+        #plt.show()
+        plt.savefig(f'kmeans_{timestep:04d}.png', dpi=100)
 
     # Following is from Greg
     if False:
@@ -94,7 +98,8 @@ for timestep in range(Y.shape[0]):
             ax.set_title(f'Cluster {i + 1}')
         for ax in axes[len(clusters):]: ax.remove()
         plt.tight_layout()
-        plt.show()
+        #plt.show()
+        plt.savefig(f'prob_dist_{timestep:04d}.png', dpi=100)
 
     n_dists = args.n_clusters
 
@@ -163,12 +168,22 @@ for timestep in range(Y.shape[0]):
     subsampled_Y = np.expand_dims(data[mask].ravel(), axis=1)
     print(subsampled_Y.shape)
 
-    df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
-    df.to_csv(f"data_{timestep:05}.csv", index=False)
+    mins = min(mins, subsampled_Y.shape[0])
+
+    # Randomly sample from the optimal clusters
+    indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
+    #indices = subsample_random(subsampled_Y, args.num_samples)
+    subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices, :]
+    print(subsampled_X.shape, subsampled_Y.shape)
+
+    Xout[timestep, :, :] = subsampled_X
+    Yout[timestep, :, :] = subsampled_Y
+
+    #df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
+    #df.to_csv(f"data_{timestep:05}.csv", index=False)
 
     # Show only optimal clusters
-    #if args.plot:
-    if True:
+    if args.plot:
         # set clusters below threshold to -1 
         kmeans.labels_[~mask] = -1 
         # and set their color to white so they won't be visible
@@ -183,3 +198,6 @@ for timestep in range(Y.shape[0]):
         cbar.set_label('Cluster Label')
         #plt.show()
         plt.savefig(f'frame_{timestep:04d}.png', dpi=100)
+
+    np.savez('subsampled.npz', X=Xout, Y=Yout)
+    print('min number of samples over all timesteps:', mins)

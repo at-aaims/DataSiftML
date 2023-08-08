@@ -15,19 +15,27 @@
 
     python args.py -h 
 
-# usage examples
-
-    DPATH=./data
+# jetfog.py is for training hard-to-model functions and predicting their uncertainty, e.g.:
 
     python jetfog.py -f heaviside -e 200 --plot --test_frac 0.01 --spacing gaussian --noise 0.1
 
-    python maxent.py --path $DPATH -nc 10 --plot --cutoff 0.5 --target wz
+# sub-sampling usage examples
 
-    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random
+    DPATH=./data
 
+# to subsample using maxent, first run the maxent.py to generate subsamples.npz, then run train.py as follows:
+
+    python maxent.py --path $DPATH -nc 10 --plot --cutoff 0.5 --target p --num_samples 500
+    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample maxent
+
+# to subsample using random approach, just call train.py directly with --subsample and --num_samples args
+
+    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random --num_samples 500
+
+# dynamic mode decomposition (DMD)
     python dmd.py --path $DPATH
 
-# create a movie of results from maxent3.py
+# create a movie of results from maxent.py
 
     ffmpeg -framerate 30 -i frame_%04d.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
 
