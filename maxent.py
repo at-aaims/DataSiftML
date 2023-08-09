@@ -13,28 +13,33 @@ import scipy
 from args import args
 from itertools import cycle
 from sklearn.cluster import KMeans
-from subsample import subsample_random
 
 figsize = (10, 2)
 
 dl = dataloader.DataLoader(args.path)
 x, y = dl.load_xyz()
 X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
-print(X.shape, Y.shape)
+if args.cluster_var == args.target: 
+    cv = Y
+else:
+    _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.cluster_var) 
+
+print(X.shape, cv.shape)
 
 #if True:
 #    timestep = 70
 
 mins = 1E6
 Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
-Yout = np.zeros((args.num_time_steps, args.num_samples, 1))
+Yout = np.zeros((args.num_time_steps, args.num_samples))
 
-for timestep in range(Y.shape[0]):
+for timestep in range(cv.shape[0]):
 
     # K-means clustering
-    data = Y[timestep, :].reshape(-1, 1)
+    data = cv[timestep, :].reshape(-1, 1)
     kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
     kmeans.fit(data)
+    print(args.n_clusters, kmeans.inertia_) # for creating elbow plot
     centroids = kmeans.cluster_centers_
     labels = kmeans.labels_
     y_pred = kmeans.predict(data)
@@ -46,7 +51,7 @@ for timestep in range(Y.shape[0]):
         plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap='tab10')
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title(f'KMeans clustering of {args.target}')
+        plt.title(f'KMeans clustering of {args.cluster_var}')
         plt.colorbar()
         #plt.show()
         plt.savefig(f'kmeans_{timestep:04d}.png', dpi=100)
@@ -163,21 +168,19 @@ for timestep in range(Y.shape[0]):
 
     # Find the indices of the original dataset, data, that have optimal clusters
     subsampled_X = X[timestep, mask, :]
+    subsampled_Y = Y[timestep, mask]
     print(subsampled_X.shape)
-    # (100, 10800, 2) (100, 10800)
-    subsampled_Y = np.expand_dims(data[mask].ravel(), axis=1)
     print(subsampled_Y.shape)
 
-    mins = min(mins, subsampled_Y.shape[0])
+    mins = min(mins, len(optimal_subset))
 
     # Randomly sample from the optimal clusters
     indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
-    #indices = subsample_random(subsampled_Y, args.num_samples)
-    subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices, :]
+    subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices]
     print(subsampled_X.shape, subsampled_Y.shape)
 
     Xout[timestep, :, :] = subsampled_X
-    Yout[timestep, :, :] = subsampled_Y
+    Yout[timestep, :] = subsampled_Y
 
     #df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
     #df.to_csv(f"data_{timestep:05}.csv", index=False)
