@@ -172,7 +172,7 @@ for timestep in range(cv.shape[0]):
     print(subsampled_X.shape)
     print(subsampled_Y.shape)
 
-    mins = min(mins, len(optimal_subset))
+    mins = min(mins, subsampled_Y.shape[0])
 
     # Randomly sample from the optimal clusters
     indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
