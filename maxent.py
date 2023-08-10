@@ -33,7 +33,11 @@ mins = 1E6
 Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
 Yout = np.zeros((args.num_time_steps, args.num_samples))
 
-for timestep in range(cv.shape[0]):
+num_timesteps = cv.shape[0] // args.window * args.window
+
+for timestep in range(0, num_timesteps, args.window):
+
+    print(f"\nTIMESTEP: {timestep}\n")
 
     # K-means clustering
     data = cv[timestep, :].reshape(-1, 1)
@@ -166,21 +170,26 @@ for timestep in range(cv.shape[0]):
     print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
           f"compression factor: {num_samples / num_samples_compressed:.1f}X")
 
-    # Find the indices of the original dataset, data, that have optimal clusters
-    subsampled_X = X[timestep, mask, :]
-    subsampled_Y = Y[timestep, mask]
-    print(subsampled_X.shape)
-    print(subsampled_Y.shape)
+    ts = timestep 
+    for sub_timestep in range(args.window):
+        ts += sub_timestep 
+        print(f"timestep: {ts}")
+        
+        # Find the indices of the original dataset, data, that have optimal clusters
+        subsampled_X = X[ts, mask, :]
+        subsampled_Y = Y[ts, mask]
+        #print(subsampled_X.shape)
+        #print(subsampled_Y.shape)
 
-    mins = min(mins, subsampled_Y.shape[0])
+        mins = min(mins, subsampled_Y.shape[0])
 
-    # Randomly sample from the optimal clusters
-    indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
-    subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices]
-    print(subsampled_X.shape, subsampled_Y.shape)
+        # Randomly sample from the optimal clusters
+        indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
+        subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices]
+        print(subsampled_X.shape, subsampled_Y.shape)
 
-    Xout[timestep, :, :] = subsampled_X
-    Yout[timestep, :] = subsampled_Y
+        Xout[ts, :, :] = subsampled_X
+        Yout[ts, :] = subsampled_Y
 
     #df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
     #df.to_csv(f"data_{timestep:05}.csv", index=False)
@@ -202,5 +211,6 @@ for timestep in range(cv.shape[0]):
         #plt.show()
         plt.savefig(f'frame_{timestep:04d}.png', dpi=100)
 
+    print(Xout.shape, Yout.shape)
     np.savez('subsampled.npz', X=Xout, Y=Yout)
     print('min number of samples over all timesteps:', mins)

@@ -30,7 +30,7 @@ if args.subsample == 'random':
     print(X.shape, Y.shape)
 
 # create time sequences
-X, Y = dataloader.create_sequences(X, Y) 
+X, Y = dataloader.create_sequences(X, Y, window_size=args.window) 
 
 # reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
 num_samples, num_sequences, sequence_length, num_features = X.shape

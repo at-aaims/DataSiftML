@@ -23,6 +23,6 @@ parser.add_argument('--target', type=str, default='wz', choices=['drag', 'p', 'w
 parser.add_argument('--time', type=str, default='1000', help='time step to analyze')
 parser.add_argument('--tune', action='store_true', default=False, help='run hyperparameter optimization')
 parser.add_argument('--verbose', action='store_true', default=False, help='verbose output')
+parser.add_argument('--window', type=int, default=3, help='time window sequence size')
 parser.add_argument('--write_interval', type=int, default=100, help='OpenFOAM write interval')
 args = parser.parse_args()
-
