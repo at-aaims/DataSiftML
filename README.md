@@ -30,7 +30,7 @@
 
 # to subsample using random approach, just call train.py directly with --subsample and --num_samples args
 
-    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random -ns 500
+    python train.py --path $DPATH --epochs 5 --batch 32 --target drag --subsample random -ns 500
 
 # dynamic mode decomposition (DMD)
     python dmd.py --path $DPATH

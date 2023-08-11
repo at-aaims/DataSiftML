@@ -87,7 +87,6 @@ class DataLoader():
         elif target == 'drag':
             time, drag = self.load_forces()
             Y = np.expand_dims(drag, axis=1)
-            print('drag here:', Y.shape)
         elif target == 'stream':
             Y = compute_stream_function(u, v, wz)
         else:
