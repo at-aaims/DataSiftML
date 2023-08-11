@@ -31,7 +31,9 @@ if args.subsample == 'random':
 print(X.shape, Y.shape)
 
 # create time sequences
-X, Y = dataloader.create_sequences(X, Y, window_size=args.window) 
+print('Data aggregated into sequences?: ', args.sequence)
+if args.sequence:
+    X, Y = dataloader.create_sequences(X, Y, window_size=args.window)
 
 print(X.shape, Y.shape)
 
@@ -43,10 +45,16 @@ print(X.shape, Y.shape)
 #Y = Y.reshape(num_sequences, sequence_length)
 #Y = np.expand_dims(Y, axis=-1)
 
-print(X.shape, Y.shape)
 
 # split data into train/test 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=False)
+
+
+print('X_train shape:', X_train.shape)
+print('Y_train shape:', Y_train.shape)
+print('X_test shape:', X_test.shape)
+print('Y_test shape:', Y_test.shape)
+
 
 # scale the data
 scaler_x = eval(args.scaler)()

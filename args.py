@@ -3,7 +3,7 @@ import os
 
 parser = argparse.ArgumentParser()
 archs = [s.split('.')[0] for s in os.listdir('archs') if s[0:1] != '_']
-parser.add_argument('--arch', type=str, default='lstm', choices=archs, help='Type of neural network architecture')
+parser.add_argument('--arch', type=str, default='fcn', choices=archs, help='Type of neural network architecture')
 parser.add_argument('--batch', type=int, default=32, help='batch size')
 parser.add_argument('-cv', '--cluster_var', type=str, default='p', choices=['drag', 'p', 'wz', 'pwz', 'stream'], help='cluster variable')
 parser.add_argument('--cutoff', type=float, default=0.5, help='optimal data cutoff factor, e.g., 0.1 keep top ten percent')
@@ -21,6 +21,7 @@ parser.add_argument('--test_frac', type=float, default=0.1, help='fraction of da
 parser.add_argument('--target', type=str, default='wz', choices=['drag', 'p', 'wz', 'pwz', 'stream'], help='training target')
 parser.add_argument('--local', action='store_true', default=False, help='local (as opposed to global) field prediction')
 parser.add_argument('--time', type=str, default='1000', help='time step to analyze')
+parser.add_argument('--sequence', type=bool, default=False, help='Aggregate individual time-steps into a sequence')
 parser.add_argument('--tune', action='store_true', default=False, help='run hyperparameter optimization')
 parser.add_argument('--verbose', action='store_true', default=False, help='verbose output')
 parser.add_argument('--window', type=int, default=3, help='time window sequence size')
