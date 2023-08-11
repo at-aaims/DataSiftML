@@ -25,12 +25,12 @@
 
 # to subsample using maxent, first run the maxent.py to generate subsamples.npz, then run train.py as follows:
 
-    python maxent.py --path $DPATH -nc 10 --plot --cutoff 0.5 --target p --num_samples 500
-    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample maxent
+    python maxent.py --path $DPATH -nc 10 --cutoff 0.5 -cv p --target drag -ns 750
+    python train.py --path $DPATH --epochs 5 --batch 32 --target drag --subsample maxent
 
 # to subsample using random approach, just call train.py directly with --subsample and --num_samples args
 
-    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random --num_samples 500
+    python train.py --path $DPATH --epochs 5 --batch 32 --target p --subsample random -ns 500
 
 # dynamic mode decomposition (DMD)
     python dmd.py --path $DPATH

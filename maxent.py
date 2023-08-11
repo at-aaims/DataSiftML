@@ -31,19 +31,23 @@ print(X.shape, cv.shape)
 
 mins = 1E6
 Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
-Yout = np.zeros((args.num_time_steps, args.num_samples))
+
+if args.local: # predicting per grid-point
+    Yout = np.zeros((args.num_time_steps, args.num_samples))
+else: # predicting drag
+    Yout = np.zeros((args.num_time_steps, 1))
 
 num_timesteps = cv.shape[0] // args.window * args.window
 
-for timestep in range(0, num_timesteps, args.window):
+for timestep in range(0, num_timesteps - args.window, args.window):
 
-    print(f"\nTIMESTEP: {timestep}\n")
+    print(f"\nTIMESTEP: {timestep} - {timestep + args.window}\n")
 
     # K-means clustering
     data = cv[timestep, :].reshape(-1, 1)
-    kmeans = KMeans(n_clusters=args.n_clusters, random_state=0)
+    kmeans = KMeans(n_clusters=args.num_clusters, random_state=0)
     kmeans.fit(data)
-    print(args.n_clusters, kmeans.inertia_) # for creating elbow plot
+    print(args.num_clusters, kmeans.inertia_) # for creating elbow plot
     centroids = kmeans.cluster_centers_
     labels = kmeans.labels_
     y_pred = kmeans.predict(data)
@@ -67,18 +71,18 @@ for timestep in range(0, num_timesteps, args.window):
 
         fig, ax = plt.subplots(figsize=figsize)
         alpha = 1.0
-        for this_centroid, k, col in zip(centroids, range(args.n_clusters), colors_):
+        for this_centroid, k, col in zip(centroids, range(args.num_clusters), colors_):
             print(this_centroid, k, col)
             mask = labels == k
             ax.scatter(x[mask], y[mask], c=col, marker='.', alpha=alpha)
 
         ax.set_autoscaley_on(False)
-        title = 'num_clusters = %s ' % str(args.n_clusters)
+        title = 'num_clusters = %s ' % str(args.num_clusters)
         ax.set_title( title )
 
         plt.show()
 
-    clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.n_clusters)]
+    clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.num_clusters)]
     clusters = [cluster.flatten() for cluster in clusters]
     #print(clusters)
 
@@ -110,7 +114,7 @@ for timestep in range(0, num_timesteps, args.window):
         #plt.show()
         plt.savefig(f'prob_dist_{timestep:04d}.png', dpi=100)
 
-    n_dists = args.n_clusters
+    n_dists = args.num_clusters
 
     # Compute adjacency matrix containing relative entropy for each pair of distributions
     adj_matrix = np.zeros((n_dists, n_dists))
@@ -169,6 +173,7 @@ for timestep in range(0, num_timesteps, args.window):
     num_samples_compressed = len(kmeans.labels_[mask])
     print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
           f"compression factor: {num_samples / num_samples_compressed:.1f}X")
+    mins = min(mins, num_samples_compressed)
 
     ts = timestep 
     for sub_timestep in range(args.window):
@@ -177,15 +182,16 @@ for timestep in range(0, num_timesteps, args.window):
         
         # Find the indices of the original dataset, data, that have optimal clusters
         subsampled_X = X[ts, mask, :]
-        subsampled_Y = Y[ts, mask]
-        #print(subsampled_X.shape)
-        #print(subsampled_Y.shape)
-
-        mins = min(mins, subsampled_Y.shape[0])
+        subsampled_Y = Y[ts, mask] if args.local else Y[ts]
 
         # Randomly sample from the optimal clusters
-        indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
-        subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices]
+        #indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
+        indices = np.random.choice(subsampled_X.shape[0], args.num_samples, replace=False)
+        if args.local:
+            subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices]
+        else:
+            subsampled_X = subsampled_X[indices, :]
+
         print(subsampled_X.shape, subsampled_Y.shape)
 
         Xout[ts, :, :] = subsampled_X
@@ -211,6 +217,6 @@ for timestep in range(0, num_timesteps, args.window):
         #plt.show()
         plt.savefig(f'frame_{timestep:04d}.png', dpi=100)
 
-    print(Xout.shape, Yout.shape)
-    np.savez('subsampled.npz', X=Xout, Y=Yout)
-    print('min number of samples over all timesteps:', mins)
+print(Xout.shape, Yout.shape)
+np.savez('subsampled.npz', X=Xout, Y=Yout)
+print('min number of samples over all timesteps:', mins)

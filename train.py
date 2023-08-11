@@ -27,16 +27,21 @@ print(X.shape, Y.shape)
 if args.subsample == 'random':
     indices = subsample_random(X, args.num_samples)
     X, Y = X[:, indices, :], Y[:, indices]
-    print(X.shape, Y.shape)
+
+print(X.shape, Y.shape)
 
 # create time sequences
 X, Y = dataloader.create_sequences(X, Y, window_size=args.window) 
 
+print(X.shape, Y.shape)
+
 # reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
-num_samples, num_sequences, sequence_length, num_features = X.shape
-X = X.reshape(num_samples * num_sequences, sequence_length, num_features)
-Y = Y.reshape(num_samples * num_sequences, sequence_length)
-Y = np.expand_dims(Y, axis=-1)
+#num_samples, num_sequences, sequence_length, num_features = X.shape
+#num_samples, num_sequences, sequence_length, num_features = X.shape
+#X = X.reshape(num_samples * num_sequences, sequence_length, num_features)
+#Y = Y.reshape(num_samples * num_sequences, sequence_length)
+#Y = Y.reshape(num_sequences, sequence_length)
+#Y = np.expand_dims(Y, axis=-1)
 
 print(X.shape, Y.shape)
 
@@ -50,7 +55,7 @@ X_test = scale(scaler_x.transform, X_test)
 
 # define model
 input_shape = X[0].shape
-model = importlib.import_module('archs.' + args.arch).build_model(input_shape)
+model = importlib.import_module('archs.' + args.arch).build_model(input_shape, window=args.window)
 model.summary()
 
 # train model

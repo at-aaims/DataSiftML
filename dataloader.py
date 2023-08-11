@@ -86,7 +86,8 @@ class DataLoader():
             Y = np.stack((p, wz), axis=1)
         elif target == 'drag':
             time, drag = self.load_forces()
-            Y = np.repeat(drag[:, np.newaxis], X.shape[1], axis=1)
+            Y = np.expand_dims(drag, axis=1)
+            print('drag here:', Y.shape)
         elif target == 'stream':
             Y = compute_stream_function(u, v, wz)
         else:
@@ -120,27 +121,16 @@ def create_sequences_from_csv(path, sequence_length):
     return np.array(sequences), np.array(labels)
 
 def create_sequences(X, Y, window_size=3):
-    """
-    Create sequences of a given window size from the input arrays X and Y.
-
-    Parameters:
-    X (numpy.ndarray): Input array X with shape (nt, nsamples, nvars).
-    Y (numpy.ndarray): Input array Y with shape (nt, nsamples).
-    window_size (int): Size of the sliding window for creating sequences.
-
-    Returns:
-    numpy.ndarray: Array of sequences for X with shape (nt - window_size + 1, nsamples, window_size, nvars).
-    numpy.ndarray: Array of sequences for Y with shape (nt - window_size + 1, nsamples, window_size).
-    """
+    """ Create time sequences of a given window size from the input arrays X and Y """
     nt, nsamples, nvars = X.shape
     num_sequences = nt - window_size + 1
 
-    X_sequences = np.zeros((num_sequences, nsamples, window_size, nvars))
-    Y_sequences = np.zeros((num_sequences, nsamples, window_size))
+    X_sequences = np.zeros((num_sequences, window_size, nsamples*nvars))
+    Y_sequences = np.zeros((num_sequences, window_size))
 
     for i in range(num_sequences):
-        X_sequences[i] = X[i:i+window_size].transpose(1, 0, 2)
-        Y_sequences[i] = Y[i:i+window_size].transpose(1, 0)
+        X_sequences[i] = X[i:i+window_size].reshape(window_size, nsamples*nvars)
+        Y_sequences[i] = Y[i:i+window_size]
 
     return (X_sequences, Y_sequences)
 
@@ -162,3 +152,4 @@ if __name__ == "__main__":
 
     X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
     print(X.shape, Y.shape)
+
