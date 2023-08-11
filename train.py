@@ -26,7 +26,14 @@ print(X.shape, Y.shape)
 # subsample data
 if args.subsample == 'random':
     indices = subsample_random(X, args.num_samples)
-    X, Y = X[:, indices, :], Y[:, indices]
+    if args.local:
+        X, Y = X[:, indices, :], Y[:, indices]
+    else:
+        X = X[:, indices, :]
+        Y = np.squeeze(Y)
+
+if args.subsample == 'none':
+    Y = np.squeeze(Y)
 
 print(X.shape, Y.shape)
 

@@ -7,27 +7,36 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import networkx as nx
 import numpy as np
+import os
 import pandas as pd
 import scipy
 
 from args import args
 from itertools import cycle
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples, silhouette_score
+
 
 figsize = (10, 2)
 
-dl = dataloader.DataLoader(args.path)
-x, y = dl.load_xyz()
-X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
-if args.cluster_var == args.target: 
-    cv = Y
+DRAWFN = 'raw_data.npz'
+
+if os.path.exists(DRAWFN):
+    data = np.load(DRAWFN)
+    X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
+
 else:
-    _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.cluster_var) 
+    dl = dataloader.DataLoader(args.path)
+    x, y = dl.load_xyz()
+    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+    if args.cluster_var == args.target: 
+        cv = Y
+    else:
+        _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.cluster_var) 
+    np.savez(DRAWFN, X=X, Y=Y, cv=cv, x=x, y=y)
+    print(f"output file {DRAWFN}")
 
 print(X.shape, cv.shape)
-
-#if True:
-#    timestep = 70
 
 mins = 1E6
 Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
@@ -41,7 +50,7 @@ num_timesteps = cv.shape[0] // args.window * args.window
 
 for timestep in range(0, num_timesteps - args.window, args.window):
 
-    print(f"\nTIMESTEP: {timestep} - {timestep + args.window}\n")
+    print(f"\nTIMESTEP: {timestep}-{timestep + args.window}\n")
 
     # K-means clustering
     data = cv[timestep, :].reshape(-1, 1)
@@ -49,7 +58,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     kmeans.fit(data)
     print(args.num_clusters, kmeans.inertia_) # for creating elbow plot
     centroids = kmeans.cluster_centers_
-    labels = kmeans.labels_
+    cluster_labels = kmeans.labels_
     y_pred = kmeans.predict(data)
     #print(y_pred)
     print(y_pred.shape)
@@ -63,24 +72,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         plt.colorbar()
         #plt.show()
         plt.savefig(f'kmeans_{timestep:04d}.png', dpi=100)
-
-    # Following is from Greg
-    if False:
-        # Use all colors that matplotlib provides by default.
-        colors_ = cycle(colors.cnames.keys())
-
-        fig, ax = plt.subplots(figsize=figsize)
-        alpha = 1.0
-        for this_centroid, k, col in zip(centroids, range(args.num_clusters), colors_):
-            print(this_centroid, k, col)
-            mask = labels == k
-            ax.scatter(x[mask], y[mask], c=col, marker='.', alpha=alpha)
-
-        ax.set_autoscaley_on(False)
-        title = 'num_clusters = %s ' % str(args.num_clusters)
-        ax.set_title( title )
-
-        plt.show()
 
     clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.num_clusters)]
     clusters = [cluster.flatten() for cluster in clusters]
@@ -170,32 +161,73 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     num_samples = len(kmeans.labels_)
     mask = np.isin(kmeans.labels_, optimal_subset)
-    num_samples_compressed = len(kmeans.labels_[mask])
+    id_subsample = np.arange(X.shape[1])[mask]
+    label_subsample = kmeans.labels_[mask]
+    num_samples_compressed = len(label_subsample)
     print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
           f"compression factor: {num_samples / num_samples_compressed:.1f}X")
     mins = min(mins, num_samples_compressed)
 
+    # Randomly sample from the optimal clusters
+    #indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
+    #print("***", subsampled_X.shape, args.num_samples, id_subsample.shape)
+
+    if args.subsample == "random":
+        indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False)
+        indices2 = id_subsample[indices1]
+    elif args.subsample == "random-weighted":
+        probs = np.abs(np.squeeze(data[mask]))
+        probs = (probs - np.min(probs)) / (np.max(probs) - np.min(probs)) 
+        probs /= np.sum(probs)
+        indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
+        indices2 = id_subsample[indices1]
+    elif args.subsample == "silhouette":
+        sample_silhouette_values = silhouette_samples(data, cluster_labels)
+        probs = np.zeros((num_samples_compressed))
+        #print("***", probs.shape, id_subsample.shape)
+        for i in optimal_subset:
+            cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+            cluster_silhouette_values = (cluster_silhouette_values - np.min(cluster_silhouette_values)) / \
+                                        (np.max(cluster_silhouette_values) - np.min(cluster_silhouette_values))
+            #cluster_silhouette_values = np.abs(cluster_silhouette_values)
+            #print(len(cluster_silhouette_values), len(probs[label_subsample == i]), i, label_subsample)
+            probs[label_subsample == i] = cluster_silhouette_values
+        probs /= np.sum(probs)
+        non_zeros = np.count_nonzero(probs)
+        if np.count_nonzero(probs) < args.num_samples:
+            raise ValueError(f"decrease --num_samples to be less or equal to {non_zeros}")
+        indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
+        indices2 = id_subsample[indices1]
+    else:
+        raise ValueError(f"must select subsampling method other than {args.subsampling}")
+    
     ts = timestep 
     for sub_timestep in range(args.window):
-        ts += sub_timestep 
         print(f"timestep: {ts}")
         
         # Find the indices of the original dataset, data, that have optimal clusters
         subsampled_X = X[ts, mask, :]
         subsampled_Y = Y[ts, mask] if args.local else Y[ts]
 
-        # Randomly sample from the optimal clusters
-        #indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
-        indices = np.random.choice(subsampled_X.shape[0], args.num_samples, replace=False)
         if args.local:
-            subsampled_X, subsampled_Y = subsampled_X[indices, :], subsampled_Y[indices]
+            subsampled_X, subsampled_Y = subsampled_X[indices1, :], subsampled_Y[indices1]
         else:
-            subsampled_X = subsampled_X[indices, :]
+            subsampled_X = subsampled_X[indices1, :]
 
         print(subsampled_X.shape, subsampled_Y.shape)
 
         Xout[ts, :, :] = subsampled_X
         Yout[ts, :] = subsampled_Y
+
+        if args.plot:
+            plt.figure(figsize=figsize)
+            plt.scatter(x[indices2], y[indices2], c=kmeans.labels_[indices2], marker='.', cmap='tab10', \
+                        vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+            plt.xlim([-20, 60])
+            plt.ylim([-10, 10])
+            plt.savefig(f'plots/frame_{ts:04d}_{args.subsample}v2.png', dpi=100)
+
+        ts += 1
 
     #df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
     #df.to_csv(f"data_{timestep:05}.csv", index=False)
