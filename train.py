@@ -39,19 +39,18 @@ print(X.shape, Y.shape)
 
 # create time sequences
 print('Data aggregated into sequences?: ', args.sequence)
+
 if args.sequence:
+    args.arch = 'lstm'
     X, Y = dataloader.create_sequences(X, Y, window_size=args.window)
+    # reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
+    num_samples, num_sequences, sequence_length, num_features = X.shape
+    X = X.reshape(num_samples * num_sequences, sequence_length, num_features)
+    Y = Y.reshape(num_samples * num_sequences, 1)
+    #Y = Y.reshape(num_sequences, sequence_length)
+    Y = np.expand_dims(Y, axis=-1)
 
 print(X.shape, Y.shape)
-
-# reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
-#num_samples, num_sequences, sequence_length, num_features = X.shape
-#num_samples, num_sequences, sequence_length, num_features = X.shape
-#X = X.reshape(num_samples * num_sequences, sequence_length, num_features)
-#Y = Y.reshape(num_samples * num_sequences, sequence_length)
-#Y = Y.reshape(num_sequences, sequence_length)
-#Y = np.expand_dims(Y, axis=-1)
-
 
 # split data into train/test 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=False)
