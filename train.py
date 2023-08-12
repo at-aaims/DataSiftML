@@ -43,12 +43,11 @@ print('Data aggregated into sequences?: ', args.sequence)
 if args.sequence:
     args.arch = 'lstm'
     X, Y = dataloader.create_sequences(X, Y, window_size=args.window)
-    # reshape input_data to make it 3D: (Batch_size, timesteps, input_dim)
-    num_samples, num_sequences, sequence_length, num_features = X.shape
-    X = X.reshape(num_samples * num_sequences, sequence_length, num_features)
-    Y = Y.reshape(num_samples * num_sequences, 1)
-    #Y = Y.reshape(num_sequences, sequence_length)
-    Y = np.expand_dims(Y, axis=-1)
+    print(X.shape)
+    print(Y.shape)
+    num_sequences, sequence_length, num_features = X.shape
+    num_samples = X.shape[0]
+    Y = Y.reshape(num_sequences, sequence_length)
 
 print(X.shape, Y.shape)
 
@@ -60,7 +59,6 @@ print('X_train shape:', X_train.shape)
 print('Y_train shape:', Y_train.shape)
 print('X_test shape:', X_test.shape)
 print('Y_test shape:', Y_test.shape)
-
 
 # scale the data
 scaler_x = eval(args.scaler)()
