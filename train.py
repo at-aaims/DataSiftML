@@ -49,11 +49,16 @@ if args.sequence:
     num_samples = X.shape[0]
     Y = Y.reshape(num_sequences, sequence_length)
 
+print('Data shape for network:')
 print(X.shape, Y.shape)
 
 # split data into train/test 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=False)
 
+if args.arch == 'fcn':
+    X = X.reshape(X.shape[0], X.shape[1]*X.shape[2])
+    X_train = X_train.reshape(X_train.shape[0], X_train.shape[1]*X_train.shape[2])
+    X_test = X_test.reshape(X_test.shape[0], X_test.shape[1]*X_test.shape[2])
 
 print('X_train shape:', X_train.shape)
 print('Y_train shape:', Y_train.shape)
@@ -61,6 +66,9 @@ print('X_test shape:', X_test.shape)
 print('Y_test shape:', Y_test.shape)
 
 # scale the data
+# Did the scaler worked well before? Data is supposed to be fed (n_samples, n_features)
+
+
 scaler_x = eval(args.scaler)()
 X_train = scale(scaler_x.fit_transform, X_train)
 X_test = scale(scaler_x.transform, X_test)
