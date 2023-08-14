@@ -149,6 +149,9 @@ if __name__ == "__main__":
 #        X, Y = dl.load_single_timestep(ts)
 #        dl.to_csv(Y, X, ts, columns=['wz', 'p', 'Ux', 'Uy'])
 
-    X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
-    print(X.shape, Y.shape)
+#    X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
+#    print(X.shape, Y.shape)
 
+    x, y = dl.load_xyz()
+    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+    print(X.shape, Y.shape)

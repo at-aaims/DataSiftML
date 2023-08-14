@@ -12,7 +12,7 @@ import pandas as pd
 import scipy
 
 from args import args
-from constants import DRAWFN, PLTDIR
+from constants import *
 from helpers import scale_probabilities
 from itertools import cycle
 from sklearn.cluster import KMeans
@@ -33,6 +33,7 @@ else:
         cv = Y
     else:
         _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.cluster_var) 
+   
     np.savez(DRAWFN, X=X, Y=Y, cv=cv, x=x, y=y)
     print(f"output file {DRAWFN}")
 
@@ -41,10 +42,10 @@ print(X.shape, cv.shape)
 mins = 1E6
 Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
 
-if args.local: # predicting per grid-point
-    Yout = np.zeros((args.num_time_steps, args.num_samples))
-else: # predicting drag
+if args.field_prediction_type == FPT_GLOBAL: # global quantity prediction
     Yout = np.zeros((args.num_time_steps, 1))
+else: # local field prediction
+    Yout = np.zeros((args.num_time_steps, args.num_samples))
 
 num_timesteps = cv.shape[0] // args.window * args.window
 
@@ -60,7 +61,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     centroids = kmeans.cluster_centers_
     cluster_labels = kmeans.labels_
     y_pred = kmeans.predict(data)
-    #print(y_pred)
     print(y_pred.shape)
 
     if args.plot:
@@ -243,12 +243,12 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         
         # Find the indices of the original dataset, data, that have optimal clusters
         subsampled_X = X[ts, mask, :]
-        subsampled_Y = Y[ts, mask] if args.local else Y[ts]
+        subsampled_Y = Y[ts] if args.field_prediction_type == FPT_GLOBAL else Y[ts, mask]
 
-        if args.local:
-            subsampled_X, subsampled_Y = subsampled_X[indices1, :], subsampled_Y[indices1]
-        else:
+        if args.field_prediction_type == FPT_GLOBAL:
             subsampled_X = subsampled_X[indices1, :]
+        else:
+            subsampled_X, subsampled_Y = subsampled_X[indices1, :], subsampled_Y[indices1]
 
         if args.verbose: print(subsampled_X.shape, subsampled_Y.shape)
 

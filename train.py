@@ -10,6 +10,7 @@ from tensorflow.keras import layers
 
 import dataloader
 from args import args
+from constants import *
 from helpers import tune, scale
 from subsample import subsample_random
 
@@ -26,7 +27,7 @@ print(X.shape, Y.shape)
 # subsample data
 if args.subsample == 'random':
     indices = subsample_random(X, args.num_samples)
-    if args.local:
+    if args.field_prediction_type == FPT_LOCAL:
         X, Y = X[:, indices, :], Y[:, indices]
     else:
         X = X[:, indices, :]
@@ -41,7 +42,6 @@ print(X.shape, Y.shape)
 print('Data aggregated into sequences?: ', args.sequence)
 
 if args.sequence:
-    args.arch = 'lstm'
     X, Y = dataloader.create_sequences(X, Y, window_size=args.window)
     print(X.shape)
     print(Y.shape)
