@@ -42,12 +42,13 @@ print(X.shape, Y.shape)
 print('Data aggregated into sequences?: ', args.sequence)
 
 if args.sequence:
-    X, Y = dataloader.create_sequences(X, Y, window_size=args.window)
+    X, Y = dataloader.create_sequences(X, Y, window_size=args.window, field_prediction_type=args.field_prediction_type)
     print(X.shape)
     print(Y.shape)
     num_sequences, sequence_length, num_features = X.shape
     num_samples = X.shape[0]
-    Y = Y.reshape(num_sequences, sequence_length)
+    if args.field_prediction_type == FPT_GLOBAL:
+        Y = Y.reshape(num_sequences, sequence_length)
 
 print('Data shape for network:')
 print(X.shape, Y.shape)
@@ -86,8 +87,8 @@ else:
     model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs)
 
 # evaluate the model
-#loss = model.evaluate(X_test, Y_test)
-#print('Loss:', loss)
+loss = model.evaluate(X_test, Y_test)
+print('Loss:', loss)
 
 # make a prediction
 #prediction = model.predict(X_test)
