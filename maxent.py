@@ -13,6 +13,7 @@ import scipy
 
 from args import args
 from constants import DRAWFN, PLTDIR
+from helpers import scale_probabilities
 from itertools import cycle
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
@@ -128,7 +129,15 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     print("out-strengths:", out_strengths)
 
     top_instrength = np.argsort(in_strengths)
-    print("sorted in_strength:", in_strengths[top_instrength])
+    sorted_instrength = in_strengths[top_instrength]
+    print("sorted in_strength:", sorted_instrength)
+    sorted_instrength_probs = sorted_instrength / np.sum(sorted_instrength)
+    print("sorted in_strength_probs:", sorted_instrength_probs)
+
+    # linearly scale probabilities of clusters from 0.01 to 0.99
+    scaled_probs = scale_probabilities(sorted_instrength_probs)
+    print("scaled probs:", scaled_probs)
+
     top_outstrength = np.argsort(out_strengths) 
 
     # control vs effect - perturbation vs effect
