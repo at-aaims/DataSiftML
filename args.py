@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from constants import FPT_LOCAL, FPT_GLOBAL
+
 parser = argparse.ArgumentParser()
 archs = [s.split('.')[0] for s in os.listdir('archs') if s[0:1] != '_']
 parser.add_argument('--arch', type=str, default='fcn', choices=archs, help='Type of neural network architecture')
@@ -19,11 +21,13 @@ choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
 parser.add_argument('--scaler', type=str, default='StandardScaler', choices=choices, help='scaler function')
 parser.add_argument('--test_frac', type=float, default=0.1, help='fraction of data to hold out for testing')
 parser.add_argument('--target', type=str, default='wz', choices=['drag', 'p', 'wz', 'pwz', 'stream'], help='training target')
-parser.add_argument('--local', action='store_true', default=False, help='local (as opposed to global) field prediction')
 parser.add_argument('--time', type=str, default='1000', help='time step to analyze')
-parser.add_argument('--sequence', type=bool, default=False, help='Aggregate individual time-steps into a sequence')
+parser.add_argument('--sequence', action='store_true', default=False, help='aggregate individual time-steps into a sequence')
 parser.add_argument('--tune', action='store_true', default=False, help='run hyperparameter optimization')
-parser.add_argument('--verbose', action='store_true', default=False, help='verbose output')
-parser.add_argument('--window', type=int, default=1, help='time window sequence size')
+parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose output')
+parser.add_argument('--window', type=int, default=3, help='time window sequence size')
 parser.add_argument('--write_interval', type=int, default=100, help='OpenFOAM write interval')
 args = parser.parse_args()
+
+args.field_prediction_type = FPT_GLOBAL if args.target == 'drag' else FPT_LOCAL
+if args.arch == 'lstm': args.sequence = True

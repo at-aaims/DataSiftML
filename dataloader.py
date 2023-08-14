@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 
+from constants import *
 from stream import compute_stream_function
 from fluidfoam import readscalar, readvector, readforce
 
@@ -119,17 +120,25 @@ def create_sequences_from_csv(path, sequence_length):
 
     return np.array(sequences), np.array(labels)
 
-def create_sequences(X, Y, window_size=3):
+def create_sequences(X, Y, window_size=3, field_prediction_type=FPT_GLOBAL):
     """ Create time sequences of a given window size from the input arrays X and Y """
     nt, nsamples, nvars = X.shape
     num_sequences = nt - window_size + 1
 
     X_sequences = np.zeros((num_sequences, window_size, nsamples*nvars))
-    Y_sequences = np.zeros((num_sequences, window_size))
+    if field_prediction_type == FPT_GLOBAL:
+        Y_sequences = np.zeros((num_sequences, window_size))
+    else:
+        Y_sequences = np.zeros((num_sequences, window_size, nsamples))
 
     for i in range(num_sequences):
         X_sequences[i] = X[i:i+window_size].reshape(window_size, nsamples*nvars)
         Y_sequences[i] = Y[i:i+window_size]
+
+        #if field_prediction_type == FPT_GLOBAL:
+        #    Y_sequences[i] = Y[i:i+window_size]
+        #else:
+        #    Y_sequences[i] = Y[i:i+window_size].reshape(window_size, nsamples)
 
     return (X_sequences, Y_sequences)
 
@@ -149,6 +158,9 @@ if __name__ == "__main__":
 #        X, Y = dl.load_single_timestep(ts)
 #        dl.to_csv(Y, X, ts, columns=['wz', 'p', 'Ux', 'Uy'])
 
-    X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
-    print(X.shape, Y.shape)
+#    X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
+#    print(X.shape, Y.shape)
 
+    x, y = dl.load_xyz()
+    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+    print(X.shape, Y.shape)
