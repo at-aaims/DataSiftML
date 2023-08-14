@@ -199,7 +199,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
         indices2 = id_subsample[indices1]
     else:
-        raise ValueError(f"must select subsampling method other than {args.subsampling}")
+        raise ValueError(f"must select subsampling method other than {args.subsample}")
     
     ts = timestep 
     for sub_timestep in range(args.window):
