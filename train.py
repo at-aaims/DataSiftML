@@ -67,8 +67,6 @@ print('Y_test shape:', Y_test.shape)
 
 # scale the data
 # Did the scaler worked well before? Data is supposed to be fed (n_samples, n_features)
-
-
 scaler_x = eval(args.scaler)()
 X_train = scale(scaler_x.fit_transform, X_train)
 X_test = scale(scaler_x.transform, X_test)
@@ -88,11 +86,11 @@ else:
     model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs)
 
 # evaluate the model
-loss = model.evaluate(X_test, Y_test)
-print('Loss:', loss)
+#loss = model.evaluate(X_test, Y_test)
+#print('Loss:', loss)
 
 # make a prediction
-prediction = model.predict(X_test)
+#prediction = model.predict(X_test)
 #print('Prediction:', prediction)
 
 # save model
