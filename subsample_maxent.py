@@ -132,36 +132,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     print("in-strengths:", in_strengths)
     print("out-strengths:", out_strengths)
 
-    top_instrength = np.argsort(in_strengths)
-    sorted_instrength = in_strengths[top_instrength]
-    print("sorted in_strength:", sorted_instrength)
-    sorted_instrength_probs = sorted_instrength / np.sum(sorted_instrength)
-    print("sorted in_strength_probs:", sorted_instrength_probs)
-
-    # linearly scale probabilities of clusters from 0.01 to 0.99
-    scaled_probs = scale_probabilities(sorted_instrength_probs)
-    print("scaled probs:", scaled_probs)
-
-    top_outstrength = np.argsort(out_strengths) 
-
-    # control vs effect - perturbation vs effect
-    print(top_instrength)  # id's of clusters sorted based on in_strength
-    print(top_outstrength)
-
-    threshold = args.cutoff * np.sum(in_strengths) # same as when computing with out_strength
-    print(threshold)
-
-    sumstrength = 0
-    i = len(in_strengths) - 1
-    optimal_subset = []
-   
-    while sumstrength < threshold:
-        optimal_subset.append(top_instrength[i])
-        sumstrength += in_strengths[top_instrength[i]]
-        i -= 1
-
-    print('optimal subset of clusters:', optimal_subset)
-
     #sorted_prob_dists = [prob_dists[i] for i in top_instrength[::-1]]
 
     if args.plot:
@@ -170,8 +140,8 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
         fig, ax = plt.subplots(figsize=(9, 6))
         for i, (prob_dist, bin_edges) in enumerate(zip(prob_dists, bin_edges_list)):
-            alpha = 0.7 if i in optimal_subset else 0.2
-            hatch = "*" if i in optimal_subset else "/"
+            alpha = 0.7 # if i in optimal_subset else 0.2
+            hatch = "*" # if i in optimal_subset else "/"
             ax.bar(bin_edges[:-1], prob_dist, width=np.diff(bin_edges), align="edge", alpha=alpha, \
                                    label=f'Cluster {i + 1}', color=colors_(i), hatch=hatch)
         ax.bar(bin_edges[:-1], global_prob_dist, width=np.diff(bin_edges), 
@@ -197,62 +167,118 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         #plt.savefig(os.path.join(PLTDIR, f'prob_dist_{timestep:04d}.png'), dpi=100)
 
     num_samples = len(kmeans.labels_)
-    mask = np.isin(kmeans.labels_, optimal_subset)
-    id_subsample = np.arange(X.shape[1])[mask]
-    label_subsample = kmeans.labels_[mask]
-    num_samples_compressed = len(label_subsample)
-    print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
-          f"compression factor: {num_samples / num_samples_compressed:.1f}X")
-    mins = min(mins, num_samples_compressed)
 
     # Randomly sample from the optimal clusters
     #indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
     #print("***", subsampled_X.shape, args.num_samples, id_subsample.shape)
 
-    if args.subsample == "random":
-        indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False)
-        indices2 = id_subsample[indices1]
+    if args.subsample == "proportional":
+        # proportionately select from clusters 
+        probs = np.zeros((data.shape[0]))
+        for i in range(args.num_clusters):
+            probs[cluster_labels == i] = in_strengths[i]
 
-    elif args.subsample == "random-weighted":
-        probs = np.abs(np.squeeze(data[mask]))
-        probs = (probs - np.min(probs)) / (np.max(probs) - np.min(probs)) 
+        probs = (probs - np.min(probs)) / (np.max(probs) - np.min(probs))
         probs /= np.sum(probs)
-        indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
-        indices2 = id_subsample[indices1]
 
-    elif args.subsample == "silhouette":
-        sample_silhouette_values = silhouette_samples(data, cluster_labels)
-        probs = np.zeros((num_samples_compressed))
-        #print("***", probs.shape, id_subsample.shape)
-        for i in optimal_subset:
-            cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
-            cluster_silhouette_values = (cluster_silhouette_values - np.min(cluster_silhouette_values)) / \
-                                        (np.max(cluster_silhouette_values) - np.min(cluster_silhouette_values))
-            #cluster_silhouette_values = np.abs(cluster_silhouette_values)
-            #print(len(cluster_silhouette_values), len(probs[label_subsample == i]), i, label_subsample)
-            probs[label_subsample == i] = cluster_silhouette_values
-        probs /= np.sum(probs)
-        non_zeros = np.count_nonzero(probs)
-        if np.count_nonzero(probs) < args.num_samples:
-            raise ValueError(f"decrease --num_samples to be less or equal to {non_zeros}")
-        indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
-        indices2 = id_subsample[indices1]
+        indices1 = np.random.choice(data.shape[0], args.num_samples, replace=False, p=probs)
+        indices2 = np.copy(indices1)
+
+        if args.plot:
+            plt.hist(cluster_labels[indices1], bins=args.num_clusters, edgecolor='k')
+            plt.xlabel('Value')
+            plt.ylabel('Frequency')
+            plt.title('Histogram')
+            plt.savefig(os.path.join(PLTDIR, f'histogram_{timestep:04d}.png'))
 
     else:
-        raise ValueError(f"must specify subsampling method using --subsample")
+
+        top_instrength = np.argsort(in_strengths)
+        sorted_instrength = in_strengths[top_instrength]
+        print("sorted in_strength:", sorted_instrength)
+        sorted_instrength_probs = sorted_instrength / np.sum(sorted_instrength)
+        print("sorted in_strength_probs:", sorted_instrength_probs)
+
+        # linearly scale probabilities of clusters from 0.01 to 0.99
+        scaled_probs = scale_probabilities(sorted_instrength_probs)
+        print("scaled probs:", scaled_probs)
+
+        top_outstrength = np.argsort(out_strengths) 
+
+        # control vs effect - perturbation vs effect
+        print(top_instrength)  # id's of clusters sorted based on in_strength
+        print(top_outstrength)
+
+        threshold = args.cutoff * np.sum(in_strengths) # same as when computing with out_strength
+        print(threshold)
+
+        sumstrength = 0
+        i = len(in_strengths) - 1
+        optimal_subset = []
+       
+        while sumstrength < threshold:
+            optimal_subset.append(top_instrength[i])
+            sumstrength += in_strengths[top_instrength[i]]
+            i -= 1
+
+        print('optimal subset of clusters:', optimal_subset)
+
+        mask = np.isin(kmeans.labels_, optimal_subset)
+        id_subsample = np.arange(X.shape[1])[mask]
+        label_subsample = kmeans.labels_[mask]
+        num_samples_compressed = len(label_subsample)
+        print(f"uncompressed samples: {num_samples}, filtered subset: {num_samples_compressed},", 
+              f"compression factor: {num_samples / num_samples_compressed:.1f}X")
+        mins = min(mins, num_samples_compressed)
+
+        if args.subsample == "random":
+            indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False)
+            indices2 = id_subsample[indices1]
+
+        elif args.subsample == "random-weighted":
+            probs = np.abs(np.squeeze(data[mask]))
+            probs = (probs - np.min(probs)) / (np.max(probs) - np.min(probs)) 
+            probs /= np.sum(probs)
+            indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
+            indices2 = id_subsample[indices1]
+
+        elif args.subsample == "silhouette":
+            sample_silhouette_values = silhouette_samples(data, cluster_labels)
+            probs = np.zeros((num_samples_compressed))
+            #print("***", probs.shape, id_subsample.shape)
+            for i in optimal_subset:
+                cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+                cluster_silhouette_values = (cluster_silhouette_values - np.min(cluster_silhouette_values)) / \
+                                            (np.max(cluster_silhouette_values) - np.min(cluster_silhouette_values))
+                #cluster_silhouette_values = np.abs(cluster_silhouette_values)
+                #print(len(cluster_silhouette_values), len(probs[label_subsample == i]), i, label_subsample)
+                probs[label_subsample == i] = cluster_silhouette_values
+            probs /= np.sum(probs)
+            non_zeros = np.count_nonzero(probs)
+            if np.count_nonzero(probs) < args.num_samples:
+                raise ValueError(f"decrease --num_samples to be less or equal to {non_zeros}")
+            indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
+            indices2 = id_subsample[indices1]
+
+    #else:
+    #    raise ValueError(f"must specify subsampling method using --subsample")
     
     ts = timestep 
     for sub_timestep in range(args.window):
         if args.verbose: print(f"timestep: {ts}")
         
-        # Find the indices of the original dataset, data, that have optimal clusters
-        subsampled_X = X[ts, mask, :]
-        subsampled_Y = Y[ts] if args.field_prediction_type == FPT_GLOBAL else Y[ts, mask]
-
-        if args.field_prediction_type == FPT_GLOBAL:
-            subsampled_X = subsampled_X[indices1, :]
+        if args.subsample == "proportional":
+            subsampled_X = X[ts, indices1, :]
+            subsampled_Y = Y[ts] if args.field_prediction_type == FPT_GLOBAL else Y[ts, indices1]
         else:
-            subsampled_X, subsampled_Y = subsampled_X[indices1, :], subsampled_Y[indices1]
+            # Find the indices of the original dataset, data, that have optimal clusters
+            subsampled_X = X[ts, mask, :]
+            subsampled_Y = Y[ts] if args.field_prediction_type == FPT_GLOBAL else Y[ts, mask]
+
+            if args.field_prediction_type == FPT_GLOBAL:
+                subsampled_X = subsampled_X[indices1, :]
+            else:
+                subsampled_X, subsampled_Y = subsampled_X[indices1, :], subsampled_Y[indices1]
 
         if args.verbose: print(subsampled_X.shape, subsampled_Y.shape)
 
@@ -291,4 +317,4 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
 print(Xout.shape, Yout.shape)
 np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, target=args.target)
-print('min number of samples over all timesteps:', mins)
+if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)

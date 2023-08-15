@@ -40,7 +40,7 @@ print('Data shape for network:')
 print(X.shape, Y.shape)
 
 # split data into train/test 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=False)
 
 if args.arch == 'fcn':
     # Flattening input so it has only two dimensions: (n_samples, n_features)

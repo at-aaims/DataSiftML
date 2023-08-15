@@ -17,7 +17,7 @@ parser.add_argument('-ns', '--num_samples', type=int, default=100, help='number 
 parser.add_argument('--num_timesteps', type=int, default=100, help='OpenFOAM number of timestamps')
 parser.add_argument('--path', type=str, default='.', help='path to simulation')
 parser.add_argument('--plot', action='store_true', default=False, help='show plots')
-choices = ['random', 'random-weighted', 'lhs', 'maxent', 'none', 'silhouette']
+choices = ['random', 'random-weighted', 'lhs', 'maxent', 'none', 'silhouette', 'proportional']
 parser.add_argument('--subsample', type=str, default='random', choices=choices, help='sampling strategy')
 choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
 parser.add_argument('--scaler', type=str, default='StandardScaler', choices=choices, help='scaler function')
