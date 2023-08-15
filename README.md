@@ -23,14 +23,15 @@
 
     DPATH=./data
 
-# to subsample using maxent, first run the maxent.py to generate subsamples.npz, then run train.py as follows:
+# first subsample either using maxent or random method
 
-    python maxent.py --path $DPATH -nc 10 --cutoff 0.5 -cv p --target drag -ns 750
-    python train.py --path $DPATH --epochs 5 --batch 32 --target drag --subsample maxent
+    python subsample_maxent.py --path $DPATH --target drag -ns 750 -nc 10 --cutoff 0.8
 
-# to subsample using random approach, just call train.py directly with --subsample and --num_samples args
+    python subsample_random.py --path $DPATH --target drag -ns 750
 
-    python train.py --path $DPATH --epochs 5 --batch 32 --target drag --subsample random -ns 500
+# then train the neural network
+
+    python train.py --path $DPATH --epochs 5 --batch 32 
 
 # dynamic mode decomposition (DMD)
     python dmd.py --path $DPATH

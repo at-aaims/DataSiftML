@@ -33,8 +33,6 @@ args = parser.parse_args()
 args.field_prediction_type = FPT_GLOBAL if args.target == 'drag' else FPT_LOCAL
 if args.arch == 'lstm': args.sequence = True
 
-print(args.window)
-
 fn = './defaults.yaml'
 
 if os.path.exists(fn):
@@ -43,4 +41,4 @@ if os.path.exists(fn):
     for key, value in defaults.items():
         setattr(args, key, value)
 
-print(args.window)
+print(args)

@@ -162,5 +162,5 @@ if __name__ == "__main__":
 #    print(X.shape, Y.shape)
 
     x, y = dl.load_xyz()
-    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
     print(X.shape, Y.shape)

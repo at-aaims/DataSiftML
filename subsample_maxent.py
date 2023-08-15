@@ -21,33 +21,34 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 
 figsize = (10, 2)
 
-if os.path.exists(DRAWFN):
-    data = np.load(DRAWFN)
+dfpath = os.path.join(SNPDIR, DRAWFN)
+
+if os.path.exists(dfpath):
+    data = np.load(dfpath)
     X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
 
 else:
     dl = dataloader.DataLoader(args.path)
     x, y = dl.load_xyz()
-    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
     if args.cluster_var == args.target: 
         cv = Y
     else:
-        _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.cluster_var) 
+        _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.cluster_var) 
    
-    np.savez(DRAWFN, X=X, Y=Y, cv=cv, x=x, y=y)
-    print(f"output file {DRAWFN}")
+    np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
+    print(f"output file {dfpath}")
 
 print(X.shape, cv.shape)
+num_timesteps = cv.shape[0] // args.window * args.window
 
 mins = 1E6
-Xout = np.zeros((args.num_time_steps, args.num_samples, 2))
+Xout = np.zeros((num_timesteps, args.num_samples, 2))
 
 if args.field_prediction_type == FPT_GLOBAL: # global quantity prediction
-    Yout = np.zeros((args.num_time_steps, 1))
+    Yout = np.zeros((num_timesteps, 1))
 else: # local field prediction
-    Yout = np.zeros((args.num_time_steps, args.num_samples))
-
-num_timesteps = cv.shape[0] // args.window * args.window
+    Yout = np.zeros((num_timesteps, args.num_samples))
 
 for timestep in range(0, num_timesteps - args.window, args.window):
 
@@ -89,11 +90,15 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     counts, bin_edges = np.histogram(data, bins=num_bins, range=bin_range, density=False)
     global_prob_dist = counts / np.sum(counts)
 
+    samples_per_cluster = []
     for cluster in clusters:
         counts, bin_edges = np.histogram(cluster, bins=num_bins, range=bin_range, density=False)
+        samples_per_cluster.append(np.sum(counts))
         prob_dist = counts / np.sum(counts)
         prob_dists.append(prob_dist)
         bin_edges_list.append(bin_edges)
+
+    print("*** counts: ", samples_per_cluster)
 
     n_dists = args.num_clusters
 
@@ -119,7 +124,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     G = nx.from_numpy_array(adj_matrix, create_using=nx.DiGraph())
 
     # Select top clusters according to cutoff_threshold
-    cutoff_threshold = 0.5
     in_strengths = np.sum(adj_matrix, axis=0)
     out_strengths = np.sum(adj_matrix, axis=1)
     # for verification
@@ -144,7 +148,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     print(top_instrength)  # id's of clusters sorted based on in_strength
     print(top_outstrength)
 
-    threshold = cutoff_threshold * np.sum(in_strengths) # same as when computing with out_strength
+    threshold = args.cutoff * np.sum(in_strengths) # same as when computing with out_strength
     print(threshold)
 
     sumstrength = 0
@@ -286,5 +290,5 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     #    plt.savefig(os.path.join(PLTDIR, f'frame_{timestep:04d}.png'), dpi=100)
 
 print(Xout.shape, Yout.shape)
-np.savez('subsampled.npz', X=Xout, Y=Yout)
+np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, target=args.target)
 print('min number of samples over all timesteps:', mins)

@@ -12,26 +12,12 @@ import dataloader
 from args import args
 from constants import *
 from helpers import tune, scale
-from subsample import subsample_random
 
 
-if args.subsample == 'maxent':
-    data = np.load('subsampled.npz')
-    X, Y = data['X'], np.squeeze(data['Y'])
-else: 
-    dl = dataloader.DataLoader(args.path)
-    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_time_steps, target=args.target)
+data = np.load(os.path.join(SNPDIR, 'subsampled.npz'))
+X, Y, target = data['X'], np.squeeze(data['Y']), data['target']
 
 print(X.shape, Y.shape)
-
-# subsample data
-if args.subsample == 'random':
-    indices = subsample_random(X, args.num_samples)
-    if args.field_prediction_type == FPT_LOCAL:
-        X, Y = X[:, indices, :], Y[:, indices]
-    else:
-        X = X[:, indices, :]
-        Y = np.squeeze(Y)
 
 if args.subsample == 'none':
     Y = np.squeeze(Y)
