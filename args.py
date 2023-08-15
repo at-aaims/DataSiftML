@@ -1,5 +1,6 @@
 import argparse
 import os
+import yaml
 
 from constants import FPT_LOCAL, FPT_GLOBAL
 
@@ -12,11 +13,11 @@ parser.add_argument('--cutoff', type=float, default=0.5, help='optimal data cuto
 parser.add_argument('--epochs', type=int, default=5, help='number of epochs')
 parser.add_argument('-nc', '--num_clusters', type=int, default=10, help='number of clusters')
 parser.add_argument('-ns', '--num_samples', type=int, default=100, help='number of subsamples')
-parser.add_argument('--num_time_steps', type=int, default=100, help='OpenFOAM number of timestamps')
+parser.add_argument('--num_timesteps', type=int, default=100, help='OpenFOAM number of timestamps')
 parser.add_argument('--path', type=str, default='.', help='path to simulation')
 parser.add_argument('--plot', action='store_true', default=False, help='show plots')
 choices = ['random', 'random-weighted', 'lhs', 'maxent', 'none', 'silhouette']
-parser.add_argument('--subsample', type=str, default='none', choices=choices, help='sampling strategy')
+parser.add_argument('--subsample', type=str, default='random', choices=choices, help='sampling strategy')
 choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
 parser.add_argument('--scaler', type=str, default='StandardScaler', choices=choices, help='scaler function')
 parser.add_argument('--test_frac', type=float, default=0.1, help='fraction of data to hold out for testing')
@@ -25,9 +26,21 @@ parser.add_argument('--time', type=str, default='1000', help='time step to analy
 parser.add_argument('--sequence', action='store_true', default=False, help='aggregate individual time-steps into a sequence')
 parser.add_argument('--tune', action='store_true', default=False, help='run hyperparameter optimization')
 parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose output')
-parser.add_argument('--window', type=int, default=3, help='time window sequence size')
+parser.add_argument('--window', type=int, default=1, help='time window sequence size')
 parser.add_argument('--write_interval', type=int, default=100, help='OpenFOAM write interval')
 args = parser.parse_args()
 
 args.field_prediction_type = FPT_GLOBAL if args.target == 'drag' else FPT_LOCAL
 if args.arch == 'lstm': args.sequence = True
+
+print(args.window)
+
+fn = './defaults.yaml'
+
+if os.path.exists(fn):
+    with open(fn, 'r') as yaml_file:
+        defaults = yaml.safe_load(yaml_file)
+    for key, value in defaults.items():
+        setattr(args, key, value)
+
+print(args.window)
