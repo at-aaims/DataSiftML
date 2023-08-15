@@ -31,7 +31,7 @@
 
 # then train the neural network
 
-    python train.py --path $DPATH --epochs 5 --batch 32 
+    python train.py --epochs 5 --batch 32 
 
 # dynamic mode decomposition (DMD)
     python dmd.py --path $DPATH
