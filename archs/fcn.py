@@ -1,6 +1,7 @@
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, LSTM, Dense, Reshape, Flatten, Dropout
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 def build_model(input_shape, units1=2000, units2=2000, activation='elu', window=1):
     activation = 'elu'
@@ -20,10 +21,15 @@ def build_model(input_shape, units1=2000, units2=2000, activation='elu', window=
 
     out = Dense(1, activation='linear', name='outputs')(x)
     model = Model(inputs=[input_layer], outputs=[out])
-    optimizer = Adam(learning_rate=0.0001)
+    optimizer = Adam(learning_rate=0.001)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.7, patience=2, min_lr=1e-8)
+    # FCN networks can be highly noisy at initial training if lr is high.
+    # High lr is often desired to explore most of the solution landscape, then reducing it when falling into an optimal minima troughs
+    early_stop = EarlyStopping(monitor='loss', patience=5)
+    callbacks = [early_stop,reduce_lr]
     model.compile(loss='mae', optimizer=optimizer)
 
-    return model
+    return model, callbacks
 
 
 def get_meta_model(input_shape):
