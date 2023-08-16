@@ -125,17 +125,18 @@ print('#########################')
 
 # define model
 input_shape = X[0].shape
-model = importlib.import_module('archs.' + args.arch).build_model(input_shape, window=args.window)
+model, callbacks = importlib.import_module('archs.' + args.arch).build_model(input_shape, window=args.window)
 model.summary()
+print(callbacks)
 
 # train model
 if args.tune:
     func = importlib.import_module('archs.' + args.arch).get_meta_model(input_shape)
     model = tune(func, X_train, Y_train, X_test, Y_test, \
-                 batch_size=args.batch, epochs=5, max_epochs=args.epochs)
+                 batch_size=args.batch, epochs=50, max_epochs=args.epochs)
     model.build(input_shape=input_shape)
 else:
-    model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs)
+    model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs, callbacks=callbacks, validation_data=([X_test],[Y_test]))
 
 # evaluate the model
 loss = model.evaluate(X_test, Y_test)
