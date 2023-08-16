@@ -23,9 +23,23 @@
 
     DPATH=./data
 
-# first subsample either using maxent or random method
+# when sampling using either 'random', 'random-weighted', 'silhouette', 'equal' you first need to figure out 
+# what the minimum number of samples is through all the clusters. To do this just set -ns 0 then run through 
+# one time, and it will tell you the minimum number of samples. Then set your value less than or equal to that 
+# value, e.g., 
 
-    python subsample_maxent.py --path $DPATH --target drag -ns 750 -nc 10 --cutoff 0.8
+    python subsample_maxent.py --path $DPATH --target drag -ns 0 -nc 10 --subsample equal
+    python subsample_maxent.py --path $DPATH --target drag -ns 10 -nc 10 --subsample equal
+
+# note that when you use --subsample equal -ns is actually the number of samples per cluster, rather than the 
+# total number of samples. So, if you want 50 overall samples per timestep, and -nc 10, then you would set -ns 5
+
+# also, for equalpercentage, we are currently passing the percentage through the --cutoff value. So if you want 
+# to sample 10% of each cluster set --cutoff 0.1
+
+# by default it will use proportional subsampling
+
+    python subsample_maxent.py --path $DPATH --target drag -ns 750 -nc 10 
 
     python subsample_random.py --path $DPATH --target drag -ns 750
 

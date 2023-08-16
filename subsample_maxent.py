@@ -19,7 +19,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
 
 
-figsize = (10, 2)
+figsize = (9, 2)
 
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
@@ -43,6 +43,11 @@ print(X.shape, cv.shape)
 num_timesteps = cv.shape[0] // args.window * args.window
 
 mins = 1E6
+
+if args.subsample == "equal": 
+    num_samples_per_cluster = args.num_samples
+    args.num_samples *= args.num_clusters
+
 Xout = np.zeros((num_timesteps, args.num_samples, 2))
 
 if args.field_prediction_type == FPT_GLOBAL: # global quantity prediction
@@ -75,7 +80,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     clusters = [data[np.argwhere(y_pred == i).flatten()] for i in range(args.num_clusters)]
     clusters = [cluster.flatten() for cluster in clusters]
-    #print(clusters)
 
     # Initialize a list to store your probability distributions and their bin edges
     prob_dists = []
@@ -120,6 +124,15 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     df = pd.DataFrame(adj_matrix)
     print(df)
 
+    if args.plot:
+        plt.clf()
+        plt.rcParams.update({'font.size': 18})
+        plt.figure(figsize=(12,10),facecolor='1') 
+        plt.imshow(adj_matrix, cmap='inferno')
+        cbar = plt.colorbar(); cbar.set_label(r'relative entropy, $D$')
+        plt.axis('equal')
+        plt.savefig(os.path.join(PLTDIR, f'adj_matrix_{timestep:04d}.png'), dpi=100)
+
     # Create a graph from the adjacency matrix and compute the minimum cut
     G = nx.from_numpy_array(adj_matrix, create_using=nx.DiGraph())
 
@@ -138,42 +151,33 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         plt.clf()
         colors_ = plt.cm.get_cmap('tab10', args.num_clusters)  
 
-        fig, ax = plt.subplots(figsize=(9, 6))
+        fig, ax1 = plt.subplots(figsize=(9, 6))
         for i, (prob_dist, bin_edges) in enumerate(zip(prob_dists, bin_edges_list)):
-            alpha = 0.7 # if i in optimal_subset else 0.2
-            hatch = "*" # if i in optimal_subset else "/"
-            ax.bar(bin_edges[:-1], prob_dist, width=np.diff(bin_edges), align="edge", alpha=alpha, \
-                                   label=f'Cluster {i + 1}', color=colors_(i), hatch=hatch)
-        ax.bar(bin_edges[:-1], global_prob_dist, width=np.diff(bin_edges), 
-               color='black', align="edge", alpha=1.0, label="Pre-clustered")
-        #ax.set_title('Probability Distributions')
-        ax.set_xlabel(f'Cluster variable ({args.cluster_var})')
-        ax.set_ylabel('Frequency')
-        ax.legend()
+            alpha = 0.7
+            ax1.bar(bin_edges[:-1], prob_dist, width=np.diff(bin_edges), align="edge", alpha=alpha,
+                    label=f'Cluster {i + 1} ({samples_per_cluster[i]})', color=colors_(i))
+
+        ax2 = ax1.twinx()
+        ax2.bar(bin_edges[:-1], global_prob_dist, width=np.diff(bin_edges),
+                color='black', align='edge', alpha=0.2, label='Pre-clustered', edgecolor='red', linewidth=1)
+        ax2.set_ylabel('Pre-clustered frequency')
+        ax1.set_xlabel(f'Cluster variable ({args.cluster_var})')
+        ax1.set_ylabel('Clustered Frequency')
+
+        # Retrieve the legend handles and labels from both axes
+        handles1, labels1 = ax1.get_legend_handles_labels()
+        handles2, labels2 = ax2.get_legend_handles_labels()
+
+        # Combine the legend entries and show them in a single legend
+        ax1.legend(handles1 + handles2, labels1 + labels2)
 
         plt.tight_layout()
-        plt.savefig(os.path.join(PLTDIR, f'prob_dist_allin1_{timestep:04d}.png'), dpi=100)
-
-        # Create a grid of probability distribution subplots
-        #grid_size = math.ceil(math.sqrt(len(clusters)))
-        #fig, axes = plt.subplots(grid_size, grid_size, figsize=(9, 9))
-        #axes = axes.flatten()
-        #for i, (prob_dist, bin_edges, ax) in enumerate(zip(prob_dists, bin_edges_list, axes)):
-        #    ax.bar(bin_edges[:-1], prob_dist, width=np.diff(bin_edges), align="edge", alpha=0.5)
-        #    ax.bar(bin_edges[:-1], global_prob_dist, width=np.diff(bin_edges), align="edge", alpha=0.5)
-        #    ax.set_title(f'Cluster {i + 1}')
-        #for ax in axes[len(clusters):]: ax.remove()
-        #plt.tight_layout()
-        #plt.savefig(os.path.join(PLTDIR, f'prob_dist_{timestep:04d}.png'), dpi=100)
+        plt.savefig(os.path.join(PLTDIR, f'prob_dists_{timestep:04d}.png'), dpi=100)
 
     num_samples = len(kmeans.labels_)
 
-    # Randomly sample from the optimal clusters
-    #indices = np.random.choice(subsampled_Y.shape[0], args.num_samples, replace=False)
-    #print("***", subsampled_X.shape, args.num_samples, id_subsample.shape)
-
     if args.subsample == "proportional":
-        # proportionately select from clusters 
+        # probabilistically select from clusters according to in-strength values
         probs = np.zeros((data.shape[0]))
         for i in range(args.num_clusters):
             probs[cluster_labels == i] = in_strengths[i]
@@ -185,13 +189,37 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         indices2 = np.copy(indices1)
 
         if args.plot:
+            plt.clf()
             plt.hist(cluster_labels[indices1], bins=args.num_clusters, edgecolor='k')
             plt.xlabel('Value')
             plt.ylabel('Frequency')
             plt.title('Histogram')
             plt.savefig(os.path.join(PLTDIR, f'histogram_{timestep:04d}.png'))
 
-    else:
+    elif args.subsample == "equal": 
+
+        indices1 = np.zeros((num_samples_per_cluster * args.num_clusters), dtype=int)
+        for i in range(args.num_clusters):
+            mins = min(mins, samples_per_cluster[i])
+            temp_indices = np.where(cluster_labels == i)[0]
+            indices1[i*num_samples_per_cluster:(i+1)*num_samples_per_cluster] = \
+                     np.random.choice(temp_indices, num_samples_per_cluster, replace=False)
+        indices2 = np.copy(indices1)
+
+    elif args.subsample == "equalpercentage": 
+
+        percentage = args.cutoff
+        indices1 = np.zeros((1), dtype=int)
+        for i in range(args.num_clusters):
+            mins = min(mins, samples_per_cluster[i])
+            temp_indices = np.where(cluster_labels == i)[0]
+            indices1 = np.append(indices1, np.random.choice(temp_indices, \
+                                 int(percentage * len(temp_indices)), replace=False))
+        indices1 = indices1[1:]
+        indices1 = np.random.choice(indices1, args.num_samples, replace=False)
+        indices2 = np.copy(indices1)
+
+    else: # rest all only select top clusters for analysis
 
         top_instrength = np.argsort(in_strengths)
         sorted_instrength = in_strengths[top_instrength]
@@ -235,23 +263,20 @@ for timestep in range(0, num_timesteps - args.window, args.window):
             indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False)
             indices2 = id_subsample[indices1]
 
-        elif args.subsample == "random-weighted":
-            probs = np.abs(np.squeeze(data[mask]))
+        elif args.subsample == "random-weighted": # use cluster var as weighting parameter
+            probs = np.abs(np.squeeze(data[mask])) 
             probs = (probs - np.min(probs)) / (np.max(probs) - np.min(probs)) 
             probs /= np.sum(probs)
             indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
             indices2 = id_subsample[indices1]
 
-        elif args.subsample == "silhouette":
+        elif args.subsample == "silhouette": # use silhouette values as weighting parameter
             sample_silhouette_values = silhouette_samples(data, cluster_labels)
             probs = np.zeros((num_samples_compressed))
-            #print("***", probs.shape, id_subsample.shape)
             for i in optimal_subset:
                 cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
                 cluster_silhouette_values = (cluster_silhouette_values - np.min(cluster_silhouette_values)) / \
                                             (np.max(cluster_silhouette_values) - np.min(cluster_silhouette_values))
-                #cluster_silhouette_values = np.abs(cluster_silhouette_values)
-                #print(len(cluster_silhouette_values), len(probs[label_subsample == i]), i, label_subsample)
                 probs[label_subsample == i] = cluster_silhouette_values
             probs /= np.sum(probs)
             non_zeros = np.count_nonzero(probs)
@@ -259,15 +284,12 @@ for timestep in range(0, num_timesteps - args.window, args.window):
                 raise ValueError(f"decrease --num_samples to be less or equal to {non_zeros}")
             indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
             indices2 = id_subsample[indices1]
-
-    #else:
-    #    raise ValueError(f"must specify subsampling method using --subsample")
     
     ts = timestep 
     for sub_timestep in range(args.window):
         if args.verbose: print(f"timestep: {ts}")
         
-        if args.subsample == "proportional":
+        if args.subsample in ["proportional", "equal", "equalpercentage"]:
             subsampled_X = X[ts, indices1, :]
             subsampled_Y = Y[ts] if args.field_prediction_type == FPT_GLOBAL else Y[ts, indices1]
         else:
@@ -285,35 +307,17 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         Xout[ts, :, :] = subsampled_X
         Yout[ts, :] = subsampled_Y
 
-        if args.plot:
-            plt.clf()
-            plt.figure(figsize=figsize)
-            plt.scatter(x[indices2], y[indices2], c=kmeans.labels_[indices2], marker='.', \
-                        cmap='tab10', vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
-            plt.xlim([-20, 60])
-            plt.ylim([-10, 10])
-            plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
-
         ts += 1
 
-    #df = pd.DataFrame(np.concatenate((subsampled_Y, subsampled_X), axis=1), columns=[args.target, 'u', 'v'])
-    #df.to_csv(f"data_{timestep:05}.csv", index=False)
-
-    # Show only optimal clusters
-    #if args.plot:
-    #    # set clusters below threshold to -1 
-    #    kmeans.labels_[~mask] = -1 
-    #    # and set their color to white so they won't be visible
-    #    cmap_white_first = colors.ListedColormap(['white', *plt.cm.viridis.colors])
-    #    plt.figure(figsize=figsize)
-    #    plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap=cmap_white_first, \
-    #                vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
-    #    plt.xlabel('X')
-    #    plt.ylabel('Y')
-    #    plt.title('Features with highest entropy')
-    #    cbar = plt.colorbar(ticks=np.arange(0, max(kmeans.labels_), 1))
-    #    cbar.set_label('Cluster Label')
-    #    plt.savefig(os.path.join(PLTDIR, f'frame_{timestep:04d}.png'), dpi=100)
+    if args.plot:
+        plt.clf()
+        plt.figure(figsize=figsize)
+        plt.scatter(x[indices2], y[indices2], c=kmeans.labels_[indices2], marker='.', \
+                    cmap='tab10', vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+        plt.xlim([-25, 65])
+        plt.ylim([-10, 10])
+        plt.axis('equal')
+        plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
 
 print(Xout.shape, Yout.shape)
 np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, target=args.target)

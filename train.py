@@ -19,11 +19,6 @@ X, Y, target = data['X'], np.squeeze(data['Y']), data['target']
 
 print(X.shape, Y.shape)
 
-if args.subsample == 'none':
-    Y = np.squeeze(Y)
-
-print(X.shape, Y.shape)
-
 # create time sequences
 print('Data aggregated into sequences?: ', args.sequence)
 
