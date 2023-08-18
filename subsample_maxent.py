@@ -126,8 +126,8 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     if args.plot:
         plt.clf()
-        plt.rcParams.update({'font.size': 18})
-        plt.figure(figsize=(12,10),facecolor='1') 
+        #plt.rcParams.update({'font.size': 18})
+        plt.figure(figsize=(12, 10), facecolor='1') 
         plt.imshow(adj_matrix, cmap='inferno')
         cbar = plt.colorbar(); cbar.set_label(r'relative entropy, $D$')
         plt.axis('equal')
@@ -320,5 +320,5 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
 
 print(Xout.shape, Yout.shape)
-np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, target=args.target)
+np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices2], y=y[indices2], target=args.target)
 if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)
