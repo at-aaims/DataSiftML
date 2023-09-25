@@ -319,6 +319,28 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         plt.axis('equal')
         plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
 
+        # Create probability distributions for subsampled data compared with pre-clustered
+        indices = np.random.choice(data.shape[0], args.num_samples, replace=False)
+        counts, bin_edges = np.histogram(data[indices,:], bins=num_bins, range=bin_range, density=False)
+        random_prob_dist = counts / np.sum(counts)
+
+        counts, bin_edges = np.histogram(data[indices2,:], bins=num_bins, range=bin_range, density=False)
+        maxent_prob_dist = counts / np.sum(counts)
+
+        plt.clf()
+        plt.figure(figsize=(6, 4))
+        plt.bar(bin_edges[:-1], global_prob_dist, width=np.diff(bin_edges),
+                color='black', align='edge', alpha=0.2, label='Full dataset', edgecolor='black', linewidth=2)
+        plt.bar(bin_edges[:-1], random_prob_dist, width=np.diff(bin_edges),
+                color='blue', align='edge', alpha=0.2, label='Sampled via Random', edgecolor='blue', linewidth=2)
+        plt.bar(bin_edges[:-1], maxent_prob_dist, width=np.diff(bin_edges),
+                color='green', align='edge', alpha=0.2, label='Sampled via MaxEnt', edgecolor='green', linewidth=2)
+        plt.xlabel(f'Cluster variable ({args.cluster_var})')
+        plt.ylabel('Frequency')
+        plt.yscale('log')
+        plt.legend()
+        plt.savefig(os.path.join(PLTDIR, f'prob_dist_subsampled_{ts:04d}.png'), dpi=100)
+
 print(Xout.shape, Yout.shape)
 np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices2], y=y[indices2], target=args.target)
 if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)
