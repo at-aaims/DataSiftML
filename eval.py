@@ -30,8 +30,10 @@ for i in range(X_test.shape[0]):
 cmap_colors = [(0, "green"), (0.5, "yellow"), (1, "red")]
 cmap_gyr = LinearSegmentedColormap.from_list("GreenYellowRed", cmap_colors)
 
-emin = np.min(errors)
-emax = np.max(errors)
+#emin = np.min(errors)
+#emax = np.max(errors)
+emin = 0
+emax = 0.015
 
 for t in range(X_test.shape[0]):
     plt.clf() 
