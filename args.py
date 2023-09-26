@@ -16,6 +16,7 @@ parser.add_argument('-nc', '--num_clusters', type=int, default=10, help='number 
 parser.add_argument('-ns', '--num_samples', type=int, default=100, help='number of subsamples')
 parser.add_argument('--num_timesteps', type=int, default=100, help='OpenFOAM number of timestamps')
 parser.add_argument('--path', type=str, default='.', help='path to simulation')
+parser.add_argument('--patience', type=int, default=5, help='number epochs for early stopping')
 parser.add_argument('--plot', action='store_true', default=False, help='show plots')
 choices = ['random', 'random-weighted', 'silhouette', 'proportional', 'equal', 'equalpercentage']
 parser.add_argument('--subsample', type=str, default='proportional', choices=choices, help='sampling strategy')

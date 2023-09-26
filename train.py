@@ -65,7 +65,7 @@ reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.7, patience=2, min_lr=1e-
 # FCN networks can be highly noisy at initial training if lr is high.
 # High lr is often desired to explore most of the solution landscape, 
 # then reducing it when falling into an optimal minima troughs
-early_stop = EarlyStopping(monitor='loss', patience=5)
+early_stop = EarlyStopping(monitor='loss', patience=args.patience)
 callbacks = [reduce_lr, early_stop]
 
 # train model
