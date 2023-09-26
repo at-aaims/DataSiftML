@@ -53,8 +53,9 @@ to sample 10% of each cluster set `--cutoff 0.1`.
 
 ### Temporal forecasting 
 
-Previous examples assume fully connected network (FCN) - time independent samples 
-to perform the same analysis with temporal forecasting, first do subsampling on windowed samples to generate sequences
+Previous examples assume fully connected network (FCN) - time independent samples. 
+In order to perform the same analysis with temporal forecasting instead, first do 
+subsampling on windowed samples to generate sequences:
 
     python subsample_maxent.py --path $DPATH --target drag -ns 750 -nc 10 --window 3
 
