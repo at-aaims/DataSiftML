@@ -51,6 +51,17 @@ to sample 10% of each cluster set `--cutoff 0.1`.
 
     python train.py --epochs 5 --batch 32 
 
+### Temporal forecasting 
+
+Previous examples assume fully connected network (FCN) - time independent samples 
+to perform the same analysis with temporal forecasting, first do subsampling on windowed samples to generate sequences
+
+    python subsample_maxent.py --path $DPATH --target drag -ns 750 -nc 10 --window 3
+
+Then train using LSTM architecture
+
+    python train.py --epochs 5 --batch 32 --arch lstm
+
 ### Dynamic mode decomposition (DMD)
 
     python dmd.py --path $DPATH
@@ -59,3 +70,5 @@ to sample 10% of each cluster set `--cutoff 0.1`.
 
     ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
 
+Note: that if you change definition of features and target, need to delete snapshots/raw_data.npz
+otherwise will throw an error. 

@@ -342,5 +342,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         plt.savefig(os.path.join(PLTDIR, f'prob_dist_subsampled_{ts:04d}.png'), dpi=100)
 
 print(Xout.shape, Yout.shape)
+
 np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices2], y=y[indices2], target=args.target)
 if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)
+

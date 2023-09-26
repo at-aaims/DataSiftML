@@ -29,7 +29,7 @@ def build_model(input_shape, units1=2000, units2=2000, activation='elu', window=
     callbacks = [early_stop,reduce_lr]
     model.compile(loss='mae', optimizer=optimizer)
 
-    return model, callbacks
+    return model
 
 
 def get_meta_model(input_shape):

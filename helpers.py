@@ -27,3 +27,17 @@ def scale_probabilities(probs, a=0.01, b=0.99):
     A, B = min(probs), max(probs)
     scaled_probs = [(x - A) * (b - a) / (B - A) + a for x in probs]
     return np.array(scaled_probs)
+
+def print_stats(X_train, Y_train, X_test, Y_test):
+
+    stats = lambda x : f"max: {np.amax(x):.04f}, min: {np.amin(x):.04f}, mean: {np.mean(x):.04f}"
+
+    print('*** Train')
+    print('X[0]:', stats(X_train[:, 0]))
+    print('X[1]:', stats(X_train[:, 1]))
+    print('Y:', stats(Y_train[:]))
+
+    print('*** Test')
+    print('X[0]:', stats(X_test[:, 0]))
+    print('X[1]:', stats(X_test[:, 1]))
+    print('Y:', stats(Y_test[:]))
