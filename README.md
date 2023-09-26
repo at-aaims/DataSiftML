@@ -60,7 +60,7 @@ to perform the same analysis with temporal forecasting, first do subsampling on 
 
 Then train using LSTM architecture
 
-    python train.py --epochs 5 --batch 32 --arch lstm
+    python train.py --epochs 5 --batch 32 --arch lstm --window 3
 
 ### Dynamic mode decomposition (DMD)
 
@@ -70,5 +70,5 @@ Then train using LSTM architecture
 
     ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
 
-Note: that if you change definition of features and target, need to delete snapshots/raw_data.npz
-otherwise will throw an error. 
+*** Important Note: that if you change definition of features and target, and also window size, 
+    you will need to delete snapshots/raw_data.npz otherwise may throw an error or give wrong result. 
