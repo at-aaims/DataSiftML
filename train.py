@@ -136,7 +136,8 @@ if args.tune:
                  batch_size=args.batch, epochs=50, max_epochs=args.epochs)
     model.build(input_shape=input_shape)
 else:
-    model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs, callbacks=callbacks, validation_data=([X_test],[Y_test]))
+    #model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs, callbacks=callbacks, validation_data=([X_test],[Y_test]))
+    model.fit(X_train, Y_train, batch_size=args.batch, epochs=args.epochs, validation_data=([X_test],[Y_test]))
 
 # evaluate the model
 loss = model.evaluate(X_test, Y_test)
@@ -148,4 +149,4 @@ print('Loss:', loss)
 
 # save model
 model.save(f"models/{args.arch}/1")
-
+np.savez(os.path.join(SNPDIR, "test.npz"), X_test=X_test, Y_test=Y_test, X_train=X_train, Y_train=Y_train)

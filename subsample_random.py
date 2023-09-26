@@ -34,6 +34,9 @@ else:
     np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
     print(f"output file {dfpath}")
 
+
+print(X.shape, Y.shape)
+
 num_timesteps = X.shape[0] // args.window * args.window
 print('num_timesteps:', X.shape[0])
 
@@ -59,11 +62,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         subsampled_X = X[ts, indices, :]
         subsampled_Y = Y[ts] if args.field_prediction_type == FPT_GLOBAL else Y[ts, indices]
 
-        #if args.field_prediction_type == FPT_GLOBAL:
-        #    subsampled_X = X[indices, :]
-        #else:
-        #    subsampled_X, subsampled_Y = X[indices, :], Y[indices]
-
         if args.verbose: print(subsampled_X.shape, subsampled_Y.shape)
 
         Xout[ts, :, :] = subsampled_X
@@ -71,14 +69,19 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
         if args.plot:
             plt.clf()
-            plt.figure(figsize=(10, 2))
+            #plt.rcParams.update({'font.size': 15})
+            plt.figure(figsize=(9, 2), facecolor='1')
             plt.scatter(x[indices], y[indices], marker='.', vmin=-0.5, vmax=0.5)
-            plt.xlim([-20, 60])
+            plt.axis('equal')
+            plt.xlim([-25, 65])
             plt.ylim([-10, 10])
-            plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
+            plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_random.png'), dpi=100)
+
+            plt.clf()
+            colors_ = plt.cm.get_cmap('tab10', args.num_clusters)
 
         ts += 1
 
 
 print(Xout.shape, Yout.shape)
-np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, target=args.target)
+np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices], y=y[indices], target=args.target)
