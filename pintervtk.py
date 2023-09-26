@@ -1,6 +1,6 @@
 from paraview.simple import *
 import vtk
-sys.path.insert(0,'/home/danielmtz/miniconda3/envs/tf-cpu/lib/python3.8/site-packages')
+#sys.path.insert(0,'/home/danielmtz/miniconda3/envs/tf-cpu/lib/python3.8/site-packages')
 import vtk.numpy_interface.dataset_adapter as dsa
 from matplotlib import pyplot as plt
 #from vtk.util.numpy_support import vtk_to_numpy
@@ -71,27 +71,28 @@ if __name__ == '__main__':
     sfnames = sorted(vtkfiles, key=extract_integer_from_filename)
     print(sfnames)
     nocases = len(sfnames)
-    # Aggregare [u,v,w,p] for each time-step structured grid
-    datau = np.zeros((nocases,800,400,2))
-    datap = np.zeros((nocases,800,400,1))
-    datawz = np.zeros((nocases,800,400,1))
+    # Aggregate [u,v,w,p] for each time-step structured grid
+    datau = np.zeros((nocases, 800, 400, 2))
+    datap = np.zeros((nocases, 800, 400, 1))
+    datawz = np.zeros((nocases, 800, 400, 1))
     
-    for nfile in sfnames[:]:
+    for c, nfile in enumerate(sfnames[:]):
+        
         print('Reading {}'.format(dpath+nfile))
-        u, p, wz= vtk_to_structnpy(nfile)
-        u = u.reshape(800,400,3)
-        p = p.reshape(800,400,1)
-        wz = wx.reshape(800,400,3)
+        u, p, wz = vtk_to_structnpy(nfile)
+        u = u.reshape(800, 400, 3)
+        p = p.reshape(800, 400, 1)
+        wz = wz.reshape(800, 400, 3)
         datau[c] = u[:,:,:2]
         datap[c] = p
-        datawz[c] = wx[:,:,2]
-        print('Flow field U shape: ',u.shape)
-        print('Pressure field shape',p.shape)
-        print('Vorticity field shape',wz.shape)
+        datawz[c] = np.expand_dims(wz[:,:,2], axis=2)
+        print('Flow field U shape: ', u.shape)
+        print('Pressure field shape', p.shape)
+        print('Vorticity field shape', wz.shape)
         if save:
-            np.save('U_800x200.npy',datau)
-            np.save('p_800x200.npy',datap)
-            np.save('wz_800x200.npy',datawz)
+            np.save('U_800x200.npy', datau)
+            np.save('p_800x200.npy', datap)
+            np.save('wz_800x200.npy', datawz)
 
         #if plotp:
         #    # Plot
