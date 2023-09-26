@@ -53,13 +53,3 @@
 # create a movie of results from maxent.py
 
     ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
-
-# push to gitlab
-
-    git push -u origin main
-
-# push to github
-
-    git push -u github main
-
-
