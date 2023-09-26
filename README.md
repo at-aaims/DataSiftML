@@ -44,11 +44,3 @@ to sample 10% of each cluster set `--cutoff 0.1`.
 ### Create a movie of results from maxent.py
 
     ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
-
-### Push to gitlab
-
-    git push -u origin main
-
-### Push to github
-
-    git push -u github main
