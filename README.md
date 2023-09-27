@@ -1,5 +1,10 @@
 # DataSiftML
 
+This is the software repository described in the following paper:
+
+Brewer et al., "Entropy-driven Optimal Sub-sampling of Fluid Dynamics for Developing Machine-learned Surrogates", 
+In the 4th International Workshop on Artificial Intelligence and Machine Learning for Scientific Applications (AI4S). IEEE.
+
 ### Dataset
 
 Note: OpenFOAM simulation was originally sourced from 
