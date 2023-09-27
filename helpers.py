@@ -1,6 +1,8 @@
 import numpy as np
 import kerastuner as kt
 
+from matplotlib import pyplot as plt
+
 def scale(func, x):
     """convert data to 2D scale and reshape back to 3D"""
     return func(x.reshape(-1, x.shape[-1])).reshape(x.shape)
@@ -33,6 +35,7 @@ def print_stats(label, X, Y):
     stats = lambda x : f"min: {np.amin(x):.04f}, mean: {np.mean(x):.04f}, max: {np.amax(x):.04f}"
 
     print(label)
+    print(X.shape)
     print('X[0]:', stats(X[:, 0]))
     print('X[1]:', stats(X[:, 1]))
     print('Y:', stats(Y[:]))
@@ -51,3 +54,17 @@ def load(*args, **kwargs):
 def savez(*args, **kwargs):
     np.save(*args, **kwargs)
 
+def plot_histograms(X_train, X_test, Y_train, Y_test):
+    bins = 50
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5))  
+    ax[0].hist(X_train[:,0], bins=bins, alpha=0.8, edgecolor='lightblue', color='lightblue')
+    ax[0].hist(X_test[:,0], bins=bins, alpha=0.5, edgecolor='red', color='red')
+    ax[0].set_title('Histogram of X[0]')
+    ax[1].hist(X_train[:,1], bins=bins, alpha=0.8, edgecolor='lightblue', color='lightblue')
+    ax[1].hist(X_test[:,1], bins=bins, alpha=0.5, edgecolor='red', color='red')
+    ax[1].set_title('Histogram of X[1]')
+    ax[2].hist(Y_train, bins=bins, alpha=0.8, edgecolor='lightblue', color='lightblue')
+    ax[2].hist(Y_test, bins=bins, alpha=0.5, edgecolor='red', color='red')
+    ax[2].set_title('Histogram of Y')
+    plt.tight_layout()
+    plt.show()

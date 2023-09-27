@@ -81,7 +81,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     centroids = kmeans.cluster_centers_
     cluster_labels = kmeans.labels_
     y_pred = kmeans.predict(data)
-    print(y_pred.shape)
 
     if args.plot:
         plt.figure(figsize=figsize)
