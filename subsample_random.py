@@ -96,4 +96,8 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
 
 print(Xout.shape, Yout.shape)
-np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices], y=y[indices], target=args.target)
+outfile = os.path.join(SNPDIR, 'subsampled.npz')
+arrays = { 'X': Xout, 'Y': Yout, 'x': x[indices], 'y': y[indices], 'target': args.target }
+np.savez(outfile, **arrays)
+if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)
+print(f'output {outfile}')

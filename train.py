@@ -3,6 +3,8 @@ import numpy as np
 import os
 import tensorflow as tf
 
+from matplotlib import pyplot as plt
+from gauss_rank_scaler import GaussRankScaler
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
@@ -37,12 +39,14 @@ print(X.shape, Y.shape)
 # split data into train/test 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=args.test_frac, shuffle=False)
 
+print(X_train.shape, Y_train.shape, X_test.shape, Y_test.shape)
+
 if args.arch == 'fcn':
     # Flattening input so it has only two dimensions: (n_samples, n_features)
     # n_features = n_points*n_variables
-    X = X.reshape(X.shape[0], X.shape[1]*X.shape[2])
-    X_train = X_train.reshape(X_train.shape[0], X_train.shape[1]*X_train.shape[2])
-    X_test = X_test.reshape(X_test.shape[0], X_test.shape[1]*X_test.shape[2])
+    X = X.reshape(X.shape[0], -1)
+    X_train = X_train.reshape(X_train.shape[0], -1)
+    X_test = X_test.reshape(X_test.shape[0], -1)
     print_stats('Train', X_train, Y_train)
     print_stats('Test', X_test, Y_test)
 
@@ -50,19 +54,30 @@ print('train/test shapes:', X_train.shape, Y_train.shape, X_test.shape, Y_test.s
 
 # scale the data
 # Did the scaler work well before? Data is supposed to be fed (n_samples, n_features)
-scaler_x = eval(args.scaler)()
+
+#scaler_x = eval(args.scaler)()
+scaler_x = StandardScaler()
 X_train = scale(scaler_x.fit_transform, X_train)
 X_test = scale(scaler_x.transform, X_test)
-Y_train, Y_test = Y_train/10, Y_test/10
+
+scaler_y = eval(args.scaler)()
+Y_train = scaler_y.fit_transform(Y_train.reshape(-1, 1))
+Y_test = scaler_y.transform(Y_test.reshape(-1, 1))
+#Y_train, Y_test = Y_train/10, Y_test/10
 print_stats('Train', X_train, Y_train)
 print_stats('Test', X_test, Y_test)
+
+if args.plot:
+    plt.hist(Y_train, bins=50, alpha=0.8, edgecolor='black')
+    plt.hist(Y_test, bins=50, alpha=0.5, edgecolor='red')
+    plt.show()
 
 # define model
 input_shape = X[0].shape
 model = importlib.import_module('archs.' + args.arch).build_model(input_shape, window=args.window)
 model.summary()
 
-reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.7, patience=2, min_lr=1e-8)
+reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.7, patience=5, min_lr=1e-8)
 
 # FCN networks can be highly noisy at initial training if lr is high.
 # High lr is often desired to explore most of the solution landscape, 

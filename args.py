@@ -20,7 +20,7 @@ parser.add_argument('--patience', type=int, default=5, help='number epochs for e
 parser.add_argument('--plot', action='store_true', default=False, help='show plots')
 choices = ['random', 'random-weighted', 'silhouette', 'proportional', 'equal', 'equalpercentage']
 parser.add_argument('--subsample', type=str, default='proportional', choices=choices, help='sampling strategy')
-choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer']
+choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer', 'GaussRankScaler']
 parser.add_argument('--scaler', type=str, default='StandardScaler', choices=choices, help='scaler function')
 parser.add_argument('--dtype', type=str, default="unstructured", choices=["structured", "unstructured"], help='data type')
 parser.add_argument('--test_frac', type=float, default=0.1, help='fraction of data to hold out for testing')
