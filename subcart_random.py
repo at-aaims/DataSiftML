@@ -17,7 +17,7 @@ def subsample_random(X, num_samples, random_seed=[0]):
 
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
-dfpath2 = os.path.join('data/npzdata', 'cyl_data400200.npz')
+dfpath2 = os.path.join(SNPDIR, 'interpolated.npz')
 
 dl = dataloader.DataLoader(args.path)
 Xold, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
@@ -36,7 +36,11 @@ if os.path.exists(dfpath2):
     #print('drag',Y.shape)
     data = np.load(dfpath2)
     print(list(data.keys()))
-    x, y, X, Yp, Wz = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3'], data['arr_4'] #, data['y']
+    #x, y, X, Yp, Wz = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3'], data['arr_4'] #, data['y']
+    x, y, X, Yp, cv = data['x'], data['y'], data['X'], data['Y'], data['cv']
+
+cv = Y
+print(Y.shape)
 
 #else:
 #    dl = dataloader.DataLoader(args.path)

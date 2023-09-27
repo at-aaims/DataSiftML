@@ -22,7 +22,7 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 figsize = (9, 2)
 
 dfpath = os.path.join(SNPDIR, DRAWFN)
-dfpath2 = os.path.join('data/npzdata', 'cyl_data400200.npz')
+dfpath2 = os.path.join(SNPDIR, 'interpolated.npz')
 
 dl = dataloader.DataLoader(args.path)
 Xold, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
@@ -35,8 +35,9 @@ if os.path.exists(dfpath2):
     print('drag',Y.shape)
     data = np.load(dfpath2)
     print(list(data.keys()))
-    x, y, X, Yp, Wz = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3'], data['arr_4'] #, data['y']
+    #x, y, X, Yp, Wz = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3'], data['arr_4'] #, data['y']
     #X, Y, cv = data['X'], data['Y'], data['cv'] # , data['x'], data['y']
+    x, y, X, Yp, cv = data['x'], data['y'], data['X'], data['Y'], data['cv']
 
 #    if args.cluster_var == args.target: 
 #        cv = Y
@@ -54,8 +55,8 @@ X = X[1:]
 print(X.shape)
 
 Yp = Yp.reshape(Yp.shape[0],Yp.shape[1]*Yp.shape[2],Yp.shape[-1])
-cv = Y
-cv = np.squeeze(cv)
+#cv = Y
+#cv = np.squeeze(cv)
 print('Pressure flattened for clustering: {}'.format(Yp.shape))
 
 x = x[1:]
@@ -89,7 +90,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     # K-means clustering
     indata = X[timestep, :,0].reshape(-1, 1)
-    print('Got here" ',indata.shape)
     kmeans = KMeans(n_clusters=args.num_clusters, random_state=0)
     kmeans.fit(indata)
     print(args.num_clusters, kmeans.inertia_) # for creating elbow plot
@@ -358,5 +358,5 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
 
 print(Xout.shape, Yout.shape)
-np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout)#, target=args.target)
+np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, target=args.target)
 if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)
