@@ -18,8 +18,6 @@ from the online version, the forces and cell-centers were additionally computed.
 
 ### Sub-sampling usage examples
 
-    > DPATH=./data
-
 When sampling using either 'random', 'random-weighted', 'silhouette', 'equal' you first need to figure out what the minimum number of samples is through all the clusters. To do this just set `-ns 0` then run through one time, and it will tell you the minimum number of samples. Then set your value less than or equal to that value, e.g., 
 
     > python subsample_maxent.py --path $DPATH --target drag -ns 0 -nc 10 --subsample equal
@@ -30,9 +28,9 @@ to sample 10% of each cluster set `--cutoff 0.1`.
 
 ### By default DataSiftML will use proportional subsampling
 
-    > python subsample_maxent.py --path $DPATH --target drag -ns 750 -nc 10 # create maxent subsampled file
+    > python subsample_maxent.py --path ./data --target drag -ns 750 -nc 10 # create maxent subsampled file
 
-    > python subsample_random.py --path $DPATH --target drag -ns 750 # create randomly subsampled npz file
+    > python subsample_random.py --path ./data --target drag -ns 750 # create randomly subsampled npz file
 
     > python subsample_full.py --path ./data # create npz of full dataset
 
@@ -55,11 +53,11 @@ Install ParaView from https://www.paraview.org/download/. Then run:
 
     > /Applications/ParaView-5.11.0.app/Contents/bin/pvpython interpolate.py
 
-This will create U_800x200.npy, p_800x200.npy, wz_800x200.npy
+This will output the file ./snapshots/interpolated.npz
 
-    > python subcart_maxent.py --path $DPATH --target drag -ns 750 -nc 10
+    > python subsample_maxent.py --path ./data --target drag -ns 750 -nc 10 --dtype structured
 
-    > python subcart_random.py --path $DPATH --target drag -ns 750
+    > python subsample_random.py --path ./data --target drag -ns 750 --dtype structured
 
 ### Then train the neural network
 
