@@ -53,7 +53,7 @@ within the data folder containing the OpenFOAM solution files:
 
 Install ParaView from https://www.paraview.org/download/. Then run:
 
-    > /Applications/ParaView-5.11.0.app/Contents/bin/pvpython pintervtk.py
+    > /Applications/ParaView-5.11.0.app/Contents/bin/pvpython interpolate.py
 
 This will create U_800x200.npy, p_800x200.npy, wz_800x200.npy
 
