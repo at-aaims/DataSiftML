@@ -43,17 +43,19 @@ if args.arch == 'fcn':
     X = X.reshape(X.shape[0], X.shape[1]*X.shape[2])
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1]*X_train.shape[2])
     X_test = X_test.reshape(X_test.shape[0], X_test.shape[1]*X_test.shape[2])
-    print_stats(X_train, Y_train, X_test, Y_test)
+    print_stats('Train', X_train, Y_train)
+    print_stats('Test', X_test, Y_test)
 
 print('train/test shapes:', X_train.shape, Y_train.shape, X_test.shape, Y_test.shape)
 
 # scale the data
-# Did the scaler worked well before? Data is supposed to be fed (n_samples, n_features)
+# Did the scaler work well before? Data is supposed to be fed (n_samples, n_features)
 scaler_x = eval(args.scaler)()
 X_train = scale(scaler_x.fit_transform, X_train)
 X_test = scale(scaler_x.transform, X_test)
 Y_train, Y_test = Y_train/10, Y_test/10
-print_stats(X_train, Y_train, X_test, Y_test)
+print_stats('Train', X_train, Y_train)
+print_stats('Test', X_test, Y_test)
 
 # define model
 input_shape = X[0].shape
@@ -80,7 +82,7 @@ else:
 
 # evaluate the model
 loss = model.evaluate(X_test, Y_test)
-print('Loss:', loss)
+print(f'Loss: {loss:.04f}')
 
 # make a prediction
 #prediction = model.predict(X_test)
