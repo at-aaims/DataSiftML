@@ -13,7 +13,7 @@ import scipy
 
 from args import args
 from constants import *
-from helpers import scale_probabilities
+from helpers import scale_probabilities, load, savez
 from itertools import cycle
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
@@ -24,7 +24,7 @@ figsize = (9, 2)
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
 if os.path.exists(dfpath):
-    data = np.load(dfpath)
+    data = load(dfpath)
     X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
 
 else:
@@ -39,7 +39,21 @@ else:
     np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
     print(f"output file {dfpath}")
 
-print(X.shape, cv.shape)
+if args.dtype == "structured":
+
+    dfpath = os.path.join(SNPDIR, 'interpolated.npz')
+    data = np.load(dfpath)
+    x, y, X, _, cv = data['x'], data['y'], data['X'], data['Y'], data['cv']
+
+    x, y = x[0], y[0] # grid points should not change over time
+    x = x.reshape(-1, 1)
+    y = y.reshape(-1, 1)
+
+    X = X.reshape(X.shape[0], -1, X.shape[-1])[1:]
+    cv = cv.reshape(cv.shape[0], -1)[1:]
+
+print(x.shape, y.shape, X.shape, Y.shape, cv.shape)
+
 num_timesteps = cv.shape[0] // args.window * args.window
 
 mins = 1E6
@@ -343,6 +357,6 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
 print(Xout.shape, Yout.shape)
 
-np.savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices2], y=y[indices2], target=args.target)
+savez(os.path.join(SNPDIR, 'subsampled.npz'), X=Xout, Y=Yout, x=x[indices2], y=y[indices2], target=args.target)
 if args.subsample != "proportional": print('min number of samples over all timesteps:', mins)
 

@@ -34,8 +34,20 @@ else:
     np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
     print(f"output file {dfpath}")
 
+if args.dtype == "structured":
 
-print(X.shape, Y.shape)
+    dfpath = os.path.join(SNPDIR, 'interpolated.npz')
+    data = np.load(dfpath)
+    x, y, X, _, cv = data['x'], data['y'], data['X'], data['Y'], data['cv']
+
+    x, y = x[0], y[0] # grid points should not change over time
+    x = x.reshape(-1, 1)
+    y = y.reshape(-1, 1)
+
+    X = X.reshape(X.shape[0], -1, X.shape[-1])[1:]
+    cv = cv.reshape(cv.shape[0], -1)[1:]
+
+print(x.shape, y.shape, X.shape, Y.shape, cv.shape)
 
 num_timesteps = X.shape[0] // args.window * args.window
 print('num_timesteps:', X.shape[0])

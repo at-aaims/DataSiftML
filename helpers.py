@@ -36,3 +36,18 @@ def print_stats(label, X, Y):
     print('X[0]:', stats(X[:, 0]))
     print('X[1]:', stats(X[:, 1]))
     print('Y:', stats(Y[:]))
+
+def verbose_io(func):
+    def wrapper(*args, **kwargs):
+        print(f"{func.__name__} {args[0]}")
+        return func(*args, **kwargs)
+    return wrapper
+
+@verbose_io
+def load(*args, **kwargs):
+    return np.load(*args, **kwargs)
+
+@verbose_io
+def savez(*args, **kwargs):
+    np.save(*args, **kwargs)
+
