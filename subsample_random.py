@@ -52,7 +52,7 @@ print(x.shape, y.shape, X.shape, Y.shape, cv.shape)
 num_timesteps = X.shape[0] // args.window * args.window
 print('num_timesteps:', X.shape[0])
 
-Xout = np.zeros((num_timesteps, args.num_samples, 2))
+Xout = np.zeros((num_timesteps, args.num_samples, X.shape[2]))
 
 if args.field_prediction_type == FPT_GLOBAL: # global quantity prediction
     Yout = np.zeros((num_timesteps, 1))

@@ -62,7 +62,7 @@ if args.subsample == "equal":
     num_samples_per_cluster = args.num_samples
     args.num_samples *= args.num_clusters
 
-Xout = np.zeros((num_timesteps, args.num_samples, 2))
+Xout = np.zeros((num_timesteps, args.num_samples, X.shape[2]))
 
 if args.field_prediction_type == FPT_GLOBAL: # global quantity prediction
     Yout = np.zeros((num_timesteps, 1))
