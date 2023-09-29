@@ -4,7 +4,7 @@ import yaml
 
 from constants import FPT_LOCAL, FPT_GLOBAL
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 archs = [s.split('.')[0] for s in os.listdir('archs') if s[0:1] != '_']
 parser.add_argument('--arch', type=str, default='fcn', choices=archs, help='Type of neural network architecture')
 parser.add_argument('--batch', type=int, default=32, help='batch size')
