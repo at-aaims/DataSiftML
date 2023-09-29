@@ -318,7 +318,10 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         if args.verbose: print(subsampled_X.shape, subsampled_Y.shape)
 
         Xout[ts, :, :] = subsampled_X
-        Yout[ts, :] = subsampled_Y
+        try:
+            Yout[ts, :] = subsampled_Y
+        except Exception as e:
+            raise Exception("Try removing ./snapshots/raw_data.npz and re-running" + str())
 
         ts += 1
 
