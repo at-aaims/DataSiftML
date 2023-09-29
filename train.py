@@ -60,8 +60,12 @@ X_train = scale(scaler_x.fit_transform, X_train)
 X_test = scale(scaler_x.transform, X_test)
 
 scaler_y = eval(args.yscaler)()
-Y_train = scaler_y.fit_transform(Y_train.reshape(-1, 1))
-Y_test = scaler_y.transform(Y_test.reshape(-1, 1))
+if args.arch == 'lstm':
+    Y_train = scale(scaler_y.fit_transform, Y_train)
+    Y_test = scale(scaler_y.transform, Y_test)
+else:
+    Y_train = scaler_y.fit_transform(Y_train.reshape(-1, 1))
+    Y_test = scaler_y.transform(Y_test.reshape(-1, 1))
 factor = 3
 Y_train, Y_test = Y_train/factor, Y_test/factor
 print_stats('Train', X_train, Y_train)
