@@ -40,7 +40,7 @@ if __name__ == '__main__':
     vtkfiles = [sfile for sfile in os.listdir(DPATH) if sfile[-3:] =='vtk']
     sfnames = sorted(vtkfiles, key=extract_integer_from_filename)
     # Aggregate [x, y, u, v, p] for each time-step structured grid
-    w, h = 100, 100
+    w, h = 104, 104
     z = lambda n : np.zeros((len(sfnames), w, h, n))
     # Following assumes X is U - which consists of [u, v, w]
     # cv is the collective variables - currently we are using wz
