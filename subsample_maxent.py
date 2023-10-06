@@ -75,7 +75,10 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     # K-means clustering
     data = cv[timestep, :].reshape(-1, 1)
-    kmeans = KMeans(n_clusters=args.num_clusters, random_state=0)
+    if args.noseed:
+        kmeans = KMeans(n_clusters=args.num_clusters)
+    else:
+        kmeans = KMeans(n_clusters=args.num_clusters, random_state=0)
     kmeans.fit(data)
     print(args.num_clusters, kmeans.inertia_) # for creating elbow plot
     centroids = kmeans.cluster_centers_

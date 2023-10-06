@@ -18,6 +18,7 @@ parser.add_argument('--num_timesteps', type=int, default=100, help='OpenFOAM num
 parser.add_argument('--path', type=str, default='.', help='path to simulation')
 parser.add_argument('--patience', type=int, default=5, help='number epochs for early stopping')
 parser.add_argument('--plot', action='store_true', default=False, help='show plots')
+parser.add_argument('--noseed', action='store_true', default=False, help='don\'t use random number seed')
 choices = ['random', 'random-weighted', 'silhouette', 'proportional', 'equal', 'equalpercentage']
 parser.add_argument('--subsample', type=str, default='proportional', choices=choices, help='sampling strategy')
 choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer', 'GaussRankScaler']

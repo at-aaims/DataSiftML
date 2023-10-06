@@ -10,8 +10,9 @@ from constants import *
 
 def subsample_random(X, num_samples, random_seed=[0]):
     random_seed[0] += 1
-    print('random seed: ', random_seed[0])
-    np.random.seed(random_seed[0])
+    if not args.noseed:
+        print('random seed: ', random_seed[0])
+        np.random.seed(random_seed[0])
     return np.random.choice(X.shape[1], num_samples, replace=False)
 
 
