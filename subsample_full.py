@@ -9,6 +9,9 @@ from constants import *
 
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
+if args.window > 1: 
+    raise ValueError("windowing not yet supported in this version")
+
 dl = dataloader.DataLoader(args.path)
 x, y = dl.load_xyz()
 X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
@@ -18,7 +21,8 @@ if args.cluster_var == args.target:
 else:
     _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.cluster_var)
 
-np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
-print(f"output file {dfpath}")
+outfile = os.path.join(SNPDIR, 'subsampled.npz')
+np.savez(outfile, X=X, Y=Y, cv=cv, x=x, y=y, target=args.target)
+print(f"output file {outfile}")
 
 print(X.shape, Y.shape)

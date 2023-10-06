@@ -37,7 +37,7 @@ to sample 10% of each cluster set `--cutoff 0.1`.
 
     > python subsample_random.py --path ./data --target drag -ns 750 # create randomly subsampled npz file
 
-    > python subsample_full.py --path ./data # create npz of full dataset
+    > python subsample_full.py --path ./data --target drag # create npz of full dataset
 
 ### Workflow for first interpolating to Cartesian grid
 
