@@ -1,5 +1,6 @@
 """Usage example: python dataloader.py --path $HOME/foam/cylinder"""
 import numpy as np
+import os
 import pandas as pd
 
 from constants import *
@@ -12,6 +13,14 @@ class DataLoader():
     def __init__(self, path, verbose=False):
         self.path = path
         self.verbose = verbose
+
+    def to_csv(self, Y, X, time, columns):
+        """Output CSV file named by timestamp, e.g. 1000.csv"""
+        df = pd.DataFrame(np.concatenate((Y, X), axis=1), columns=columns)
+        df.to_csv(str(time) + '.csv', index=False)
+
+
+class DataLoaderOF(DataLoader):
 
     def load_forces(self, write_interval=100):
         forces = readforce(self.path, time_name='0', name='forces')
@@ -26,40 +35,7 @@ class DataLoader():
         y = np.expand_dims(y, axis=1)
         return x, y
 
-    def load_single_timestep(self, time: str, target='p'):
-        # Read solution values from OpenFOAM simulation
-        stime = str(time)
-        p = readscalar(self.path, stime, 'p.gz')
-        x, y, z = readvector(self.path, stime, 'C.gz')
-        Ux, Uy, Uz = readvector(self.path, stime, 'U.gz')
-        wx, wy, wz = readvector(self.path, stime, 'vorticity.gz')
-
-        # Add an extra dimension
-        p = np.expand_dims(p, axis=1)
-        x = np.expand_dims(x, axis=1)
-        y = np.expand_dims(y, axis=1)
-        Ux = np.expand_dims(Ux, axis=1)
-        Uy = np.expand_dims(Uy, axis=1)
-        wz = np.expand_dims(wz, axis=1)
-
-        stacked = np.hstack((x, y, p, Ux, Uy, wz))
-
-        df = pd.DataFrame(stacked, columns=['x', 'y', 'p', 'Ux', 'Uy', 'wz'])
-        X = df[['Ux', 'Uy']].to_numpy()
-
-        if target == 'p':
-            Y = p
-        elif target == 'wz':
-            Y = wz
-        elif target == 'stream':
-            #Y =  df[['p', 'wz']].to_numpy()
-            Y = compute_stream_function(u, v, omega)
-        else:
-            raiseValueError('target not supported')
-
-        return X, Y
-
-    def load_multiple_timesteps(self, write_interval, num_timesteps, target='p'):
+    def load_multiple_timesteps(self, write_interval, num_timesteps, target, cv):
 
         p = readscalar(self.path, str(write_interval), 'p.gz')
         num_pts = p.shape[0]
@@ -76,29 +52,59 @@ class DataLoader():
             p[i, :] = readscalar(self.path, str(ts), 'p.gz')
             u[i, :], v[i, :], _ = readvector(self.path, str(ts), 'U.gz')
             _, _, wz[i, :] = readvector(self.path, str(ts), 'vorticity.gz')
+    
+        params = {'p': p, 'wz': wz, 'pwz': np.stack((p, wz), axis=1)}
+
+        if target == 'drag':
+            params['drag'] = self.load_forces()[1].reshape(-1, 1)
+
+        if cv == 'stream': 
+            params['stream'] = compute_stream_function(u, v, wz)
 
         X = np.stack((u, v), axis=-1)
+        Y = params[target]
+        cv = params[cv]
 
-        if target == 'p':
-            Y = p
-        elif target == 'wz':
-            Y = wz
-        elif target == 'pwz':
-            Y = np.stack((p, wz), axis=1)
-        elif target == 'drag':
-            time, drag = self.load_forces()
-            Y = np.expand_dims(drag, axis=1)
-        elif target == 'stream':
-            Y = compute_stream_function(u, v, wz)
-        else:
-            raiseValueError('target not supported')
+        return X, Y, cv
 
-        return X, Y
 
-    def to_csv(self, Y, X, time, columns):
-        """Output CSV file named by timestamp, e.g. 1000.csv"""
-        df = pd.DataFrame(np.concatenate((Y, X), axis=1), columns=columns)
-        df.to_csv(str(time) + '.csv', index=False)
+class DataLoaderCSV(DataLoader):
+    
+    def __init__(self, path, verbose=False, prefix='cylinder_t', zwidth=4):
+        super().__init__(path, verbose)
+        self.prefix = prefix
+        self.zwidth = zwidth
+    
+    def load_xyz(self):
+        dfpath = os.path.join(self.path, f'{self.prefix}{str(1).zfill(4)}.csv')
+        data = pd.read_csv(dfpath)
+        x = data["X"].to_numpy()
+        y = data["Y"].to_numpy()
+        self.num_points = len(x)
+        return x, y
+
+    def load_multiple_timesteps(self, write_interval, num_timesteps, target, cv):
+        num_pts = self.num_points
+        x_labels = ["dudx", "dudy", "dvdx", "dvdy", "vortZ"]
+        tke = np.zeros((num_timesteps, num_pts))
+        wz = np.zeros((num_timesteps, num_pts, len(x_labels)))
+        cv = np.zeros((num_timesteps, num_pts))
+        
+        for i, ts in enumerate(range(write_interval, write_interval*num_timesteps+1, write_interval)):
+            dfpath = os.path.join(self.path,f'cylinder_t{str(i+1).zfill(4)}.csv')
+            data = pd.read_csv(dfpath)
+            tke_val = abs(data["TKE"].to_numpy())
+            tke_0 = np.where(tke_val <= 1.0e-9)[0]
+            tke_val[tke_0] = 1.0e-8
+            tke[i, :] = np.log(tke_val)
+            wz[i, :] = data[x_labels].to_numpy()
+            cv[i,:] = data["vortZ"].to_numpy()
+        
+        X = wz
+        Y = tke
+
+        return X, Y, cv
+
 
 def create_sequences_from_csv(path, sequence_length):
     """Read the CSV files and create sequences"""
@@ -152,14 +158,8 @@ if __name__ == "__main__":
     #X, Y = dl.read_solution('1000')
     #print(X.shape, Y.shape)
 
-#    # Read solution values from OpenFOAM simulation
-#    for i, ts in enumerate(range(100, 10100, 100)):
-#        print(i, ts)
-#        X, Y = dl.load_single_timestep(ts)
-#        dl.to_csv(Y, X, ts, columns=['wz', 'p', 'Ux', 'Uy'])
-
-#    X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
-#    print(X.shape, Y.shape)
+    #X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
+    #print(X.shape, Y.shape)
 
     x, y = dl.load_xyz()
     X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)

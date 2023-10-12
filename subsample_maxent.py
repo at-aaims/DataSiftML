@@ -18,9 +18,6 @@ from itertools import cycle
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
 
-
-figsize = (9, 2)
-
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
 if os.path.exists(dfpath):
@@ -28,18 +25,18 @@ if os.path.exists(dfpath):
     X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
 
 else:
-    dl = dataloader.DataLoader(args.path)
+    dl = dataloader.DataLoaderCSV(args.path) if args.dtype == "csv" else dataloader.DataLoaderOF(args.path)
     x, y = dl.load_xyz()
-    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
-    if args.cluster_var == args.target: 
-        cv = Y
-    else:
-        _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.cluster_var) 
-   
+    X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, \
+                                          target=args.target, cv=args.cluster_var)
+    print(X.shape, Y.shape, args.num_timesteps)
+
     np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
     print(f"output file {dfpath}")
 
-if args.dtype == "structured":
+if args.dtype == "interpolated":
+    # note: this uses the target Y as previously read
+    #       future improvement would be to have this self-container - read the drag here directly
 
     dfpath = os.path.join(SNPDIR, 'interpolated.npz')
     data = np.load(dfpath)
@@ -86,7 +83,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
     y_pred = kmeans.predict(data)
 
     if args.plot:
-        plt.figure(figsize=figsize)
+        plt.figure(figsize=(9, 2))
         plt.scatter(x, y, c=kmeans.labels_, marker='.', cmap='tab10')
         plt.xlabel('X')
         plt.ylabel('Y')
@@ -330,7 +327,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     if args.plot:
         plt.clf()
-        plt.figure(figsize=figsize)
+        plt.figure(figsize=(9, 2))
         plt.scatter(x[indices2], y[indices2], c=kmeans.labels_[indices2], marker='.', \
                     cmap='tab10', vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
         plt.xlim([-25, 65])

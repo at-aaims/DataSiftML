@@ -25,7 +25,7 @@ def compute_stream_function(u, v, omega):
     tolerance = 1e-6
     for _ in range(max_iterations):
         psi_old = stream_function.copy()
-        print(f"interation: {_}")
+        print(f"iteration: {_}")
         for i in range(1, ny - 1):
             for j in range(1, nx - 1):
                 stream_function[i, j] = 0.25 * (

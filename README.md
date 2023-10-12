@@ -21,7 +21,15 @@ from the online version, the forces and cell-centers were additionally computed.
 
     > python args.py -h 
 
-### Sub-sampling usage examples
+### By default DataSiftML will use proportional subsampling (this is what we suggest you use as default)
+
+    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 20 # create maxent subsampled file
+
+    > python subsample_random.py --path ./data --target drag -ns 540 # create randomly subsampled npz file
+
+    > python subsample_full.py --path ./data --target drag # create npz of full dataset
+
+### Sub-sampling usage examples using other methods
 
 When sampling using either 'random', 'random-weighted', 'silhouette', 'equal' you first need to figure out what the minimum number of samples is through all the clusters. To do this just set `-ns 0` then run through one time, and it will tell you the minimum number of samples. Then set your value less than or equal to that value, e.g., 
 
@@ -30,14 +38,6 @@ When sampling using either 'random', 'random-weighted', 'silhouette', 'equal' yo
 
 Note that when you use `--subsample equal`, `-ns` is actually the number of samples per cluster, rather than the total number of samples. So, if you want 50 overall samples per timestep, and `-nc 10`, then you would set `-ns 5`. Also, for equalpercentage, we are currently passing the percentage through the `--cutoff` value. So if you want 
 to sample 10% of each cluster set `--cutoff 0.1`.
-
-### By default DataSiftML will use proportional subsampling
-
-    > python subsample_maxent.py --path ./data --target drag -ns 750 -nc 10 # create maxent subsampled file
-
-    > python subsample_random.py --path ./data --target drag -ns 750 # create randomly subsampled npz file
-
-    > python subsample_full.py --path ./data --target drag # create npz of full dataset
 
 ### Workflow for first interpolating to Cartesian grid
 
@@ -60,9 +60,15 @@ Install ParaView from https://www.paraview.org/download/. Then run:
 
 This will output the file ./snapshots/interpolated.npz
 
-    > python subsample_maxent.py --path ./data --target drag -ns 750 -nc 10 --dtype structured
+    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 10 --dtype structured
 
-    > python subsample_random.py --path ./data --target drag -ns 750 --dtype structured
+    > python subsample_random.py --path ./data --target drag -ns 540 --dtype structured
+
+### Subsampling nekRS CSV data files
+
+To use CSV files as input for subsampling, we add `--dtype csv`:
+
+    > python subsample_maxent.py -ns 1000 -nc 20 --dtype csv --path ./nekrs_data
 
 ### Then train the neural network
 
@@ -74,7 +80,7 @@ Previous examples assume fully connected network (FCN) - time independent sample
 In order to perform the same analysis with temporal forecasting instead, first do 
 subsampling on windowed samples to generate sequences:
 
-    > python subsample_maxent.py --path ./data --target drag -ns 750 -nc 10 --window 3
+    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 10 --window 3
 
 Then train using LSTM architecture
 
@@ -88,4 +94,4 @@ Then train using LSTM architecture
 
     > ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
 
-*** Important Note: that if you change definition of features and target, and also window size, you will need to delete snapshots/raw_data.npz otherwise may throw an error or give wrong result. 
+*** Important Note: that if you change definition of features and target or --window or --dtype you will need to delete snapshots/raw_data.npz otherwise may throw an error or give wrong result. 

@@ -6,6 +6,7 @@ import os
 
 from args import args
 from constants import *
+from helpers import load
 
 
 def subsample_random(X, num_samples, random_seed=[0]):
@@ -19,23 +20,19 @@ def subsample_random(X, num_samples, random_seed=[0]):
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
 if os.path.exists(dfpath):
-    data = np.load(dfpath)
+    data = load(dfpath)
     X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
 
 else:
-    dl = dataloader.DataLoader(args.path)
+    dl = dataloader.DataLoaderCSV(args.path) if args.dtype == "csv" else dataloader.DataLoaderOF(args.path)
     x, y = dl.load_xyz()
-    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
+    X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
     print(X.shape, Y.shape, args.num_timesteps)
-    if args.cluster_var == args.target:
-        cv = Y
-    else:
-        _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.cluster_var)
 
     np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
     print(f"output file {dfpath}")
 
-if args.dtype == "structured":
+if args.dtype == "interpolated":
 
     dfpath = os.path.join(SNPDIR, 'interpolated.npz')
     data = np.load(dfpath)
