@@ -7,19 +7,13 @@ import os
 from args import args
 from constants import *
 
-dfpath = os.path.join(SNPDIR, DRAWFN)
-
 if args.window > 1: 
     raise ValueError("windowing not yet supported in this version")
 
-dl = dataloader.DataLoader(args.path)
+dl = dataloader.DataLoaderCSV(args.path) if args.dtype == "csv" else dataloader.DataLoaderOF(args.path)
 x, y = dl.load_xyz()
-X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
-print(X.shape, Y.shape, args.num_timesteps)
-if args.cluster_var == args.target:
-    cv = Y
-else:
-    _, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.cluster_var)
+X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, \
+                                      target=args.target, cv=args.cluster_var)
 
 outfile = os.path.join(SNPDIR, 'subsampled.npz')
 np.savez(outfile, X=X, Y=Y, cv=cv, x=x, y=y, target=args.target)

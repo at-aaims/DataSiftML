@@ -66,9 +66,14 @@ This will output the file ./snapshots/interpolated.npz
 
 ### Subsampling nekRS CSV data files
 
-To use CSV files as input for subsampling, we add `--dtype csv`:
+To use CSV files as input for subsampling, we add `--dtype csv`, e.g., if the CSV data files
+are in a folder called `./nekrs_data`, we can run the following:
 
     > python subsample_maxent.py -ns 1000 -nc 20 --dtype csv --path ./nekrs_data
+
+    > python subsample_random.py -ns 1000 --dtype csv --path ./nekrs_data
+
+    > python subsample_full.py --path ./data --dtype csv --path ./nekrs_data
 
 ### Then train the neural network
 
