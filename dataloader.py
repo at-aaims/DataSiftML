@@ -76,7 +76,7 @@ class DataLoaderCSV(DataLoader):
         self.zwidth = zwidth
     
     def load_xyz(self):
-        dfpath = os.path.join(self.path, f'{self.prefix}{str(1).zfill(4)}.csv')
+        dfpath = os.path.join(self.path, f'{self.prefix}{str(1).zfill(self.zwidth)}.csv')
         data = pd.read_csv(dfpath)
         x = data["X"].to_numpy()
         y = data["Y"].to_numpy()
@@ -91,7 +91,7 @@ class DataLoaderCSV(DataLoader):
         cv = np.zeros((num_timesteps, num_pts))
         
         for i, ts in enumerate(range(write_interval, write_interval*num_timesteps+1, write_interval)):
-            dfpath = os.path.join(self.path,f'cylinder_t{str(i+1).zfill(4)}.csv')
+            dfpath = os.path.join(self.path,f'cylinder_t{str(i+1).zfill(self.zwidth)}.csv')
             data = pd.read_csv(dfpath)
             tke_val = abs(data["TKE"].to_numpy())
             tke_0 = np.where(tke_val <= 1.0e-9)[0]
