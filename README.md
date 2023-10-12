@@ -91,10 +91,6 @@ Then train using LSTM architecture
 
     > python train.py --epochs 5 --batch 32 --arch lstm --window 3
 
-### Dynamic mode decomposition (DMD)
-
-    > python dmd.py --path ./data
-
 ### Create a movie of results from maxent.py
 
     > ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
