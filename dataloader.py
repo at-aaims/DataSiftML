@@ -90,8 +90,8 @@ class DataLoaderCSV(DataLoader):
     def load_multiple_timesteps(self, write_interval, num_timesteps, target, cv):
         num_pts = self.num_points
         x_labels = ["dudx", "dudy", "dvdx", "dvdy", "vortZ"]
-        tke = np.zeros((num_timesteps, num_pts))
-        wz = np.zeros((num_timesteps, num_pts, len(x_labels)))
+        Y = np.zeros((num_timesteps, num_pts))
+        X = np.zeros((num_timesteps, num_pts, len(x_labels)))
         cv = np.zeros((num_timesteps, num_pts))
         
         for i, ts in enumerate(range(write_interval, write_interval*num_timesteps+1, write_interval)):
@@ -100,12 +100,9 @@ class DataLoaderCSV(DataLoader):
             tke_val = abs(data["TKE"].to_numpy())
             tke_0 = np.where(tke_val <= 1.0e-9)[0]
             tke_val[tke_0] = 1.0e-8
-            tke[i, :] = np.log(tke_val)
-            wz[i, :] = data[x_labels].to_numpy()
+            Y[i, :] = np.log(tke_val)
+            X[i, :] = data[x_labels].to_numpy()
             cv[i,:] = data["vortZ"].to_numpy()
-        
-        X = wz
-        Y = tke
 
         return X, Y, cv
 
