@@ -59,7 +59,7 @@ scaler_x = eval(args.xscaler)()
 X_train = scale(scaler_x.fit_transform, X_train)
 X_test = scale(scaler_x.transform, X_test)
 
-if args.yscaler not 'None':
+if args.yscaler != 'None':
     scaler_y = eval(args.yscaler)()
     if args.arch == 'lstm':
         Y_train = scale(scaler_y.fit_transform, Y_train)
