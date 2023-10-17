@@ -75,6 +75,8 @@ are in a folder called `./nekrs_data`, we can run the following:
 
     > python subsample_full.py --path ./data --dtype csv --path ./nekrs_data
 
+    > python train.py --epochs 5 --batch 32 --yscaler None
+
 ### Then train the neural network
 
     > python train.py --epochs 5 --batch 32 
@@ -95,4 +97,21 @@ Then train using LSTM architecture
 
     > ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
 
-*** Important Note: that if you change definition of features and target or --window or --dtype you will need to delete snapshots/raw_data.npz otherwise may throw an error or give wrong result. 
+
+### Important notes
+
+1. If the definition of features, target, `--window`, or `--dtype` is changed, `snapshots/raw_data.npz` needs to be deleted; otherwise may throw an error or give wrong result. 
+
+2. For reproducibility for Fig. 8 results in the AI4S paper, the following two commands were run five times and averaged for `-ns` values of 540, 1080, 2160. 
+
+    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 20 -cv wz \
+                                 --dtype structured --noseed
+    > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
+                      --yscalefactor 10 --test_frac 0.05
+
+and similarly for random sub-sampling:
+
+    > python subsample_random.py --path ./data --target drag -ns 540 --dtype structured --noseed
+    > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
+                      --yscalefactor 10 --test_frac 0.05
+

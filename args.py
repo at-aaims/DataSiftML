@@ -21,9 +21,10 @@ parser.add_argument('--plot', action='store_true', default=False, help='show plo
 parser.add_argument('--noseed', action='store_true', default=False, help='don\'t use random number seed')
 choices = ['random', 'random-weighted', 'silhouette', 'proportional', 'equal', 'equalpercentage']
 parser.add_argument('--subsample', type=str, default='proportional', choices=choices, help='sampling strategy')
-choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer', 'GaussRankScaler']
+choices = ['StandardScaler', 'MinMaxScaler', 'PowerTransformer', 'GaussRankScaler', 'None']
 parser.add_argument('--xscaler', type=str, default='MinMaxScaler', choices=choices, help='scaler function')
 parser.add_argument('--yscaler', type=str, default='GaussRankScaler', choices=choices, help='scaler function')
+parser.add_argument('--yscalefactor', type=float, default=3, help='scalefactor to divide target by before training')
 parser.add_argument('--dtype', type=str, default='openfoam', choices=['openfoam', 'interpolated', 'csv'], help='data type')
 parser.add_argument('--test_frac', type=float, default=0.1, help='fraction of data to hold out for testing')
 parser.add_argument('--target', type=str, default='wz', choices=['drag', 'p', 'wz', 'tke'], help='training target')

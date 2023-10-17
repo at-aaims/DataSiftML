@@ -5,7 +5,11 @@ import pandas as pd
 
 from constants import *
 from stream import compute_stream_function
-from fluidfoam import readscalar, readvector, readforce
+# We do this so that users who are not using OpenFOAM need not install fluidfoam
+try: 
+    from fluidfoam import readscalar, readvector, readforce
+except:
+    print("WARNING: fluidfoam not able to be loaded")
 
 
 class DataLoader():
