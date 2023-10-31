@@ -39,6 +39,16 @@ When sampling using either 'random', 'random-weighted', 'silhouette', 'equal' yo
 Note that when you use `--subsample equal`, `-ns` is actually the number of samples per cluster, rather than the total number of samples. So, if you want 50 overall samples per timestep, and `-nc 10`, then you would set `-ns 5`. Also, for equalpercentage, we are currently passing the percentage through the `--cutoff` value. So if you want 
 to sample 10% of each cluster set `--cutoff 0.1`.
 
+### Using kNN
+
+To sample the points using MaxEnt and also select k nearest neighbors (kNN) around each point that MaxEnt selects, use:
+
+    > python subsample_maxent.py --path ./data --target p -ns 540 -nc 20 -nn 4 --plot 
+
+The `--plot` here will generate plots/knn.png so you can see a sample of what it looks like.
+Using this method with `--dtype interpolated` is not yet supported. 
+It may either give incorrect results or crash.
+
 ### Workflow for first interpolating to Cartesian grid
 
 Need to first install OpenFOAM. The easiest way to do this if you have Docker:
@@ -60,9 +70,9 @@ Install ParaView from https://www.paraview.org/download/. Then run:
 
 This will output the file ./snapshots/interpolated.npz
 
-    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 10 --dtype structured
+    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 10 --dtype interpolated
 
-    > python subsample_random.py --path ./data --target drag -ns 540 --dtype structured
+    > python subsample_random.py --path ./data --target drag -ns 540 --dtype interpolated
 
 ### Subsampling nekRS CSV data files
 

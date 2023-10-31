@@ -17,6 +17,7 @@ from helpers import scale_probabilities, load, savez
 from itertools import cycle
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
+from sklearn.neighbors import NearestNeighbors
 
 dfpath = os.path.join(SNPDIR, DRAWFN)
 
@@ -59,12 +60,17 @@ if args.subsample == "equal":
     num_samples_per_cluster = args.num_samples
     args.num_samples *= args.num_clusters
 
-Xout = np.zeros((num_timesteps, args.num_samples, X.shape[2]))
+if args.knn > 0:
+    max_samples = (args.knn + 1)*args.num_samples
+else:
+    max_samples = args.num_samples
+
+Xout = np.zeros((num_timesteps, max_samples, X.shape[2]))
 
 if args.field_prediction_type == FPT_GLOBAL: # global quantity prediction
     Yout = np.zeros((num_timesteps, 1))
 else: # local field prediction
-    Yout = np.zeros((num_timesteps, args.num_samples))
+    Yout = np.zeros((num_timesteps, max_samples))
 
 for timestep in range(0, num_timesteps - args.window, args.window):
 
@@ -288,15 +294,51 @@ for timestep in range(0, num_timesteps - args.window, args.window):
             probs = np.zeros((num_samples_compressed))
             for i in optimal_subset:
                 cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
-                cluster_silhouette_values = (cluster_silhouette_values - np.min(cluster_silhouette_values)) / \
-                                            (np.max(cluster_silhouette_values) - np.min(cluster_silhouette_values))
+                cluster_silhouette_values = (cluster_silhouette_values - \
+                                             np.min(cluster_silhouette_values)) / \
+                                            (np.max(cluster_silhouette_values) - \
+                                             np.min(cluster_silhouette_values))
                 probs[label_subsample == i] = cluster_silhouette_values
             probs /= np.sum(probs)
             non_zeros = np.count_nonzero(probs)
             if np.count_nonzero(probs) < args.num_samples:
                 raise ValueError(f"decrease --num_samples to be less or equal to {non_zeros}")
-            indices1 = np.random.choice(num_samples_compressed, args.num_samples, replace=False, p=probs)
+            indices1 = np.random.choice(num_samples_compressed, \
+                                        args.num_samples, replace=False, \
+                                        p=probs)
             indices2 = id_subsample[indices1]
+
+    if args.knn > 0:
+
+        # Convert x, y into a single array for spatial KNN
+        spatial_data = np.column_stack((x, y))
+        print(spatial_data.shape)
+
+        # Step 3: Randomly select a subset of N points
+        #subset_indices = np.random.choice(cv.shape[1], args.num_samples, replace=False)
+        #print(subset_indices)
+        subset_points = spatial_data[indices1]
+
+        # Step 4: For each point in the subset, find k nearest neighbors
+        k = args.knn
+        # k+1 because the point itself will be returned as the nearest
+        nbrs = NearestNeighbors(n_neighbors=k+1).fit(spatial_data)  
+        _, neighbor_indices = nbrs.kneighbors(subset_points)
+
+        # Flattening and removing duplicate indices to get unique neighbors
+        #unique_neighbors = np.unique(neighbor_indices.flatten())
+        unique_neighbors = neighbor_indices.flatten()
+        indices1 = unique_neighbors
+
+        if args.plot:
+            plt.clf()
+            plt.figure(figsize=(9, 2))
+            plt.scatter(spatial_data[:,0], spatial_data[:, 1], \
+                        c='lightblue', s=10, label='Subsampled Points')
+            plt.scatter(spatial_data[unique_neighbors, 0], \
+                        spatial_data[unique_neighbors, 1], \
+                        c='red', s=10, label='Subsampled Points')
+        plt.savefig(os.path.join(PLTDIR, f'knn_{timestep:04d}.png'), dpi=100)
     
     ts = timestep 
     for sub_timestep in range(args.window):

@@ -12,6 +12,7 @@ parser.add_argument('-cv', '--cluster_var', type=str, default='p', choices=['p',
 parser.add_argument('--cutoff', type=float, default=0.5, help='optimal data cutoff factor, e.g., 0.1 keep top ten percent')
 parser.add_argument('--epochs', type=int, default=5, help='number of epochs')
 parser.add_argument('--hybrid', type=float, default=1, help='hybrid maxent+random sampling approach')
+parser.add_argument('-nn', '--knn', type=int, default=0, help='use knn to include neighbars')
 parser.add_argument('-nc', '--num_clusters', type=int, default=10, help='number of clusters')
 parser.add_argument('-ns', '--num_samples', type=int, default=100, help='number of subsamples')
 parser.add_argument('--num_timesteps', type=int, default=100, help='OpenFOAM number of timestamps')
