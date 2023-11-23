@@ -127,27 +127,28 @@ def create_sequences_from_csv(path, sequence_length):
 
     return np.array(sequences), np.array(labels)
 
-def create_sequences(X, Y, window_size=3, field_prediction_type=FPT_GLOBAL):
-    """ Create time sequences of a given window size from the input arrays X and Y """
-    nt, nsamples, nvars = X.shape
-    num_sequences = nt - window_size + 1
 
-    X_sequences = np.zeros((num_sequences, window_size, nsamples*nvars))
+def create_sequences(X, Y, window_size=3, overlap=2, field_prediction_type=FPT_GLOBAL):
+    """ Create time sequences of a given window size from the input arrays X and Y with specified overlap """
+    nt, nsamples, nvars = X.shape
+    stride = window_size - overlap
+    num_sequences = (nt - window_size) // stride + 1
+
+    X_sequences = np.zeros((num_sequences, window_size, nsamples * nvars))
     if field_prediction_type == FPT_GLOBAL:
         Y_sequences = np.zeros((num_sequences, window_size))
     else:
         Y_sequences = np.zeros((num_sequences, window_size, nsamples))
 
     for i in range(num_sequences):
-        X_sequences[i] = X[i:i+window_size].reshape(window_size, nsamples*nvars)
-        Y_sequences[i] = Y[i:i+window_size]
+        start_index = i * stride
+        X_sequences[i] = X[start_index:start_index + window_size].reshape(window_size, nsamples * nvars)
+        if field_prediction_type == FPT_GLOBAL:
+            Y_sequences[i] = Y[start_index:start_index + window_size].flatten()
+        else:
+            Y_sequences[i] = Y[start_index:start_index + window_size].reshape(window_size, -1)
 
-        #if field_prediction_type == FPT_GLOBAL:
-        #    Y_sequences[i] = Y[i:i+window_size]
-        #else:
-        #    Y_sequences[i] = Y[i:i+window_size].reshape(window_size, nsamples)
-
-    return (X_sequences, Y_sequences)
+    return X_sequences, Y_sequences
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ print(X.shape, Y.shape, len(Y.shape))
 
 if args.arch == 'lstm':
     print('creating time sequences...')
-    X, Y = dataloader.create_sequences(X, Y, window_size=args.window, \
+    X, Y = dataloader.create_sequences(X, Y, overlap=args.overlap, window_size=args.window, \
                                        field_prediction_type=args.field_prediction_type)
     print(X.shape, Y.shape)
     num_sequences, sequence_length, num_features = X.shape

@@ -2,8 +2,7 @@
 
 This is the software repository described in the following paper:
 
-Brewer et al., "Entropy-driven Optimal Sub-sampling of Fluid Dynamics for Developing Machine-learned Surrogates", 
-In the 4th International Workshop on Artificial Intelligence and Machine Learning for Scientific Applications (AI4S). IEEE.
+Brewer et al., "Entropy-driven Optimal Sub-sampling of Fluid Dynamics for Developing Machine-learned Surrogates", In the 4th International Workshop on Artificial Intelligence and Machine Learning for Scientific Applications (AI4S). IEEE. https://doi.org/10.1145/3624062.3626084
 
 ### Dataset
 
@@ -101,12 +100,15 @@ subsampling on windowed samples to generate sequences:
 
 Then train using LSTM architecture
 
-    > python train.py --epochs 5 --batch 32 --arch lstm --window 3
+    > python train.py --epochs 5 --batch 32 --arch lstm --window 3 --target drag
+
+Note: the `--target drag` on the train.py command is only to force to 
+`args.field_prediction_type` to be set to `FPT_GLOBAL`, which is then passed to 
+the call to `dataloader.create_sequences(...)`.
 
 ### Create a movie of results from maxent.py
 
     > ffmpeg -framerate 30 -i frame_%*.png -c:v libx264 -pix_fmt yuv420p -r 30 output.mp4
-
 
 ### Important notes
 
