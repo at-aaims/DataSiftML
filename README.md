@@ -116,14 +116,14 @@ the call to `dataloader.create_sequences(...)`.
 
 2. For reproducibility for Fig. 8 results in the AI4S paper, the following two commands were run five times and averaged for `-ns` values of 540, 1080, 2160. 
 
-    > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 20 -cv wz \
-                                 --dtype structured --noseed
-    > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
-                      --yscalefactor 10 --test_frac 0.05
+        > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 20 -cv wz \
+                                     --dtype structured --noseed
+        > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
+                          --yscalefactor 10 --test_frac 0.05
 
-and similarly for random sub-sampling:
+    and similarly for random sub-sampling:
 
-    > python subsample_random.py --path ./data --target drag -ns 540 --dtype structured --noseed
-    > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
-                      --yscalefactor 10 --test_frac 0.05
+        > python subsample_random.py --path ./data --target drag -ns 540 --dtype structured --noseed
+        > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
+                          --yscalefactor 10 --test_frac 0.05
 
