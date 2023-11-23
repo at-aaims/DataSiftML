@@ -118,12 +118,14 @@ the call to `dataloader.create_sequences(...)`.
 
         > python subsample_maxent.py --path ./data --target drag -ns 540 -nc 20 -cv wz \
                                      --dtype structured --noseed
+
         > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
                           --yscalefactor 10 --test_frac 0.05
 
     and similarly for random sub-sampling:
 
         > python subsample_random.py --path ./data --target drag -ns 540 --dtype structured --noseed
+
         > python train.py --epochs 100 --batch 2 --patience 12 --yscaler None \
                           --yscalefactor 10 --test_frac 0.05
 
