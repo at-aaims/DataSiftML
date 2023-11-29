@@ -4,6 +4,8 @@ This is the software repository described in the following paper:
 
 > Brewer et al., "Entropy-driven Optimal Sub-sampling of Fluid Dynamics for Developing Machine-learned Surrogates", In the 4th International Workshop on Artificial Intelligence and Machine Learning for Scientific Applications (AI4S). IEEE. https://doi.org/10.1145/3624062.3626084
 
+This code has been tested with Python 3.8.15.
+
 ### Dataset
 
 Note: OpenFOAM simulation was originally sourced from 
