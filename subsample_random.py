@@ -21,15 +21,19 @@ dfpath = os.path.join(SNPDIR, DRAWFN)
 
 if os.path.exists(dfpath):
     data = load(dfpath)
-    X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
+    X, Y, cv, x, y, z = data['X'], data['Y'], data['cv'], data['x'], data['y'], data['z']
 
 else:
-    dl = dataloader.DataLoaderCSV(args.path) if args.dtype == "csv" else dataloader.DataLoaderOF(args.path)
-    x, y = dl.load_xyz()
-    X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
+    if args.dtype == "csv":
+        dl = dataloader.DataLoaderCSV(args.path, dims=args.dims)
+    else:
+        dl = dataloader.DataLoaderOF(args.path, dims=args.dims)
+    x, y, z = dl.load_xyz()
+    X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, \
+                                          target=args.target, cv=args.cluster_var)
     print(X.shape, Y.shape, args.num_timesteps)
 
-    np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
+    np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y, z=z)
     print(f"output file {dfpath}")
 
 if args.dtype == "interpolated":
@@ -47,7 +51,7 @@ if args.dtype == "interpolated":
 
 print(x.shape, y.shape, X.shape, Y.shape, cv.shape)
 
-num_timesteps = X.shape[0] // args.window * args.window
+num_timesteps = X.shape[0] // args.window * args.window + 1
 print('num_timesteps:', X.shape[0])
 
 Xout = np.zeros((num_timesteps, args.num_samples, X.shape[2]))
@@ -80,20 +84,23 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         except Exception as e:
             raise Exception("Try removing ./snapshots/raw_data.npz and re-running" + str())
 
-        if args.plot:
-            plt.clf()
-            #plt.rcParams.update({'font.size': 15})
-            plt.figure(figsize=(9, 2), facecolor='1')
+    if args.plot:
+
+        plt.clf()
+        if args.dims == 3:
+            fig = plt.figure(figsize=(8, 6))
+            ax = plt.subplot(111, projection='3d')
+            ax.view_init(elev=20., azim=-35)
+            ax.scatter(x[indices], y[indices], z[indices], marker='.', vmin=-0.5, vmax=0.5)
+        else:
+            plt.figure(figsize=(9, 2))
             plt.scatter(x[indices], y[indices], marker='.', vmin=-0.5, vmax=0.5)
-            plt.axis('equal')
             plt.xlim([-25, 65])
             plt.ylim([-10, 10])
-            plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_random.png'), dpi=100)
+        plt.axis('equal')
+        plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_random.png'), dpi=100, bbox_inches='tight')
 
-            plt.clf()
-            colors_ = plt.cm.get_cmap('tab10', args.num_clusters)
-
-        ts += 1
+    ts += 1
 
 
 print(Xout.shape, Yout.shape)

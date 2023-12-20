@@ -10,6 +10,7 @@ parser.add_argument('--arch', type=str, default='fcn', choices=archs, help='Type
 parser.add_argument('--batch', type=int, default=32, help='batch size')
 parser.add_argument('-cv', '--cluster_var', type=str, default='p', choices=['p', 'wz', 'pwz', 'stream'], help='cluster variable')
 parser.add_argument('--cutoff', type=float, default=0.5, help='optimal data cutoff factor, e.g., 0.1 keep top ten percent')
+parser.add_argument('--dims', type=int, default=2, choices=[2, 3], help='dataset dimensionality, 2 or 3 dimensions')
 parser.add_argument('--epochs', type=int, default=5, help='number of epochs')
 parser.add_argument('--hybrid', type=float, default=1, help='hybrid maxent+random sampling approach')
 parser.add_argument('-nn', '--knn', type=int, default=0, help='use knn to include neighbars')

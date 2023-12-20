@@ -14,9 +14,10 @@ except:
 
 class DataLoader():
 
-    def __init__(self, path, verbose=False):
+    def __init__(self, path, dims=2, verbose=False):
         self.path = path
         self.verbose = verbose
+        self.dims = dims
 
     def to_csv(self, Y, X, time, columns):
         """Output CSV file named by timestamp, e.g. 1000.csv"""
@@ -37,7 +38,8 @@ class DataLoaderOF(DataLoader):
         x, y, z = readvector(self.path, '0', 'C.gz')
         x = np.expand_dims(x, axis=1)
         y = np.expand_dims(y, axis=1)
-        return x, y
+        z = np.expand_dims(z, axis=1)
+        return x, y, z
 
     def load_multiple_timesteps(self, write_interval, num_timesteps, target, cv):
 
@@ -49,12 +51,13 @@ class DataLoaderOF(DataLoader):
         p = np.zeros((num_timesteps, num_pts))
         u = np.zeros((num_timesteps, num_pts))
         v = np.zeros((num_timesteps, num_pts))
+        w = np.zeros((num_timesteps, num_pts))
         wz = np.zeros((num_timesteps, num_pts))
 
         for i, ts in enumerate(range(write_interval, write_interval*num_timesteps+1, write_interval)):
             print(i, ts)
             p[i, :] = readscalar(self.path, str(ts), 'p.gz')
-            u[i, :], v[i, :], _ = readvector(self.path, str(ts), 'U.gz')
+            u[i, :], v[i, :], w[i, :] = readvector(self.path, str(ts), 'U.gz')
             _, _, wz[i, :] = readvector(self.path, str(ts), 'vorticity.gz')
     
         params = {'p': p, 'wz': wz, 'pwz': np.stack((p, wz), axis=1)}
@@ -65,7 +68,12 @@ class DataLoaderOF(DataLoader):
         if cv == 'stream': 
             params['stream'] = compute_stream_function(u, v, wz)
 
-        X = np.stack((u, v), axis=-1)
+        if self.dims == 2:
+            X = np.stack((u, v), axis=-1)
+        elif self.dims == 3:
+            X = np.stack((u, v, w), axis=-1)
+        else:
+            raise ValueError("dims must be either 2 or 3")
         Y = params[target]
         cv = params[cv]
 
@@ -155,7 +163,8 @@ if __name__ == "__main__":
 
     from args import args
     
-    dl = DataLoader(args.path)
+    print(args.path)
+    dl = DataLoaderOF(args.path, dims=args.dims)
     
     #X, Y = dl.read_solution('1000')
     #print(X.shape, Y.shape)
@@ -163,6 +172,7 @@ if __name__ == "__main__":
     #X, Y = create_sequences(*dl.load_multiple_timesteps(100, 100))
     #print(X.shape, Y.shape)
 
-    x, y = dl.load_xyz()
-    X, Y = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target)
-    print(X.shape, Y.shape)
+    x, y, z = dl.load_xyz()
+    print(x.shape, y.shape, z.shape)
+    X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, target=args.target, cv=args.cluster_var)
+    print(X.shape, Y.shape, cv.shape)

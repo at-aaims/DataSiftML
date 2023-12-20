@@ -88,6 +88,12 @@ are in a folder called `./nekrs_data`, we can run the following:
 
     > python train.py --epochs 5 --batch 32 --yscaler None
 
+### 3D analysis of surface mounted cube case
+
+    > python subsample_maxent.py --path ./data/surfaceMountedCube_COARSEgrid/fullCase --num_timesteps 1 -nc 20 --dims 3 -ns 2000 --plot
+
+    > python subsample_random.py --path ./data/surfaceMountedCube_COARSEgrid/fullCase --num_timesteps 1 --dims 3 -ns 2000 --plot
+
 ### Then train the neural network
 
     > python train.py --epochs 5 --batch 32 

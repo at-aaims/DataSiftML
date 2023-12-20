@@ -23,16 +23,19 @@ dfpath = os.path.join(SNPDIR, DRAWFN)
 
 if os.path.exists(dfpath):
     data = load(dfpath)
-    X, Y, cv, x, y = data['X'], data['Y'], data['cv'], data['x'], data['y']
+    X, Y, cv, x, y, z = data['X'], data['Y'], data['cv'], data['x'], data['y'], data['z']
 
 else:
-    dl = dataloader.DataLoaderCSV(args.path) if args.dtype == "csv" else dataloader.DataLoaderOF(args.path)
-    x, y = dl.load_xyz()
+    if args.dtype == "csv":
+        dl = dataloader.DataLoaderCSV(args.path, dims=args.dims)
+    else:
+        dl = dataloader.DataLoaderOF(args.path, dims=args.dims)
+    x, y, z = dl.load_xyz()
     X, Y, cv = dl.load_multiple_timesteps(args.write_interval, args.num_timesteps, \
                                           target=args.target, cv=args.cluster_var)
     print(X.shape, Y.shape, args.num_timesteps)
 
-    np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y)
+    np.savez(dfpath, X=X, Y=Y, cv=cv, x=x, y=y, z=z)
     print(f"output file {dfpath}")
 
 if args.dtype == "interpolated":
@@ -56,7 +59,7 @@ print(x.shape, y.shape, X.shape, Y.shape, cv.shape)
 # cv = compute_euclidean_distance(x, y)
 # cv = np.tile(cv.T, (args.num_timesteps, 1))
 
-num_timesteps = cv.shape[0] // args.window * args.window
+num_timesteps = cv.shape[0] // args.window * args.window + 1
 
 mins = 1E6
 
@@ -378,14 +381,23 @@ for timestep in range(0, num_timesteps - args.window, args.window):
         ts += 1
 
     if args.plot:
+
         plt.clf()
-        plt.figure(figsize=(9, 2))
-        plt.scatter(x[indices2], y[indices2], c=kmeans.labels_[indices2], marker='.', \
-                    cmap='tab10', vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
-        plt.xlim([-25, 65])
-        plt.ylim([-10, 10])
+        if args.dims == 3:
+            fig = plt.figure(figsize=(8, 6))
+            ax = plt.subplot(111, projection='3d')
+            ax.view_init(elev=20., azim=-35)
+            ax.scatter(x[indices2], y[indices2], z[indices2], c=kmeans.labels_[indices2], \
+                       cmap='tab10', vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+        else:
+            plt.figure(figsize=(9, 2))
+            plt.scatter(x[indices2], y[indices2], c=kmeans.labels_[indices2], marker='.', \
+                        cmap='tab10', vmin=-0.5, vmax=max(kmeans.labels_) + 0.5)
+            plt.xlim([-25, 65])
+            plt.ylim([-10, 10])
+
         plt.axis('equal')
-        plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100)
+        plt.savefig(os.path.join(PLTDIR, f'frame_{ts:04d}_{args.subsample}.png'), dpi=100, bbox_inches='tight')
 
         # Create probability distributions for subsampled data compared with pre-clustered
         indices = np.random.choice(data.shape[0], args.num_samples, replace=False)
