@@ -13,7 +13,7 @@ import scipy
 
 from args import args
 from constants import *
-from helpers import scale_probabilities, load, savez
+from helpers import scale_probabilities, load, savez, compute_euclidean_distance
 from itertools import cycle
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
@@ -52,6 +52,10 @@ if args.dtype == "interpolated":
 
 print(x.shape, y.shape, X.shape, Y.shape, cv.shape)
 
+# use Euclidean distance as cluster variable
+# cv = compute_euclidean_distance(x, y)
+# cv = np.tile(cv.T, (args.num_timesteps, 1))
+
 num_timesteps = cv.shape[0] // args.window * args.window
 
 mins = 1E6
@@ -78,6 +82,7 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     # K-means clustering
     data = cv[timestep, :].reshape(-1, 1)
+    print(data.shape)
     if args.noseed:
         kmeans = KMeans(n_clusters=args.num_clusters)
     else:
@@ -145,8 +150,13 @@ for timestep in range(0, num_timesteps - args.window, args.window):
 
     if args.plot:
         plt.clf()
-        #plt.rcParams.update({'font.size': 18})
+        plt.rcParams.update({'font.size': 18})
         plt.figure(figsize=(12, 10), facecolor='1') 
+        ticks = np.arange(args.num_clusters)
+        plt.xticks(ticks)
+        plt.yticks(ticks)
+        plt.xlabel('Cluster number')
+        plt.ylabel('Cluster number')
         plt.imshow(adj_matrix, cmap='inferno')
         cbar = plt.colorbar(); cbar.set_label(r'relative entropy, $D$')
         plt.axis('equal')

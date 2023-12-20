@@ -3,6 +3,9 @@ import kerastuner as kt
 
 from matplotlib import pyplot as plt
 
+def compute_euclidean_distance(x, y):
+    return np.sqrt(x**2 + y**2)
+
 def scale(func, x):
     """convert data to 2D scale and reshape back to 3D"""
     return func(x.reshape(-1, x.shape[-1])).reshape(x.shape)
@@ -68,3 +71,4 @@ def plot_histograms(X_train, X_test, Y_train, Y_test):
     ax[2].set_title('Histogram of Y')
     plt.tight_layout()
     plt.show()
+
